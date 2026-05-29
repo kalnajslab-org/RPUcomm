@@ -1,33 +1,32 @@
 /*
- *  PUComm.cpp
- *  Author:  Lars Kalnajs
- *  Created: September 2019
+ *  RPUcomm.cpp
+ *  Derived from PUcomm.cpp
  *  
  *  This file implements an Arduino library (C++ class) that implements the communication
- *  between the PIB and PU. The class inherits its protocol from the SerialComm
+ *  between the RATCHuTS and RPU. The class inherits its protocol from the SerialComm
  *  class.
  */
 
-#include "PUComm.h"
+#include "RPUcomm.h"
 
-PUComm::PUComm(Stream * serial_port)
+RPUcomm::RPUcomm(Stream * serial_port)
     : SerialComm(serial_port)
 {
 }
 
-// PIB -> PU (with params) ---------------------------
+// RATCHuTS -> RPU (with params) ---------------------------
 
-bool PUComm::TX_SetHeaters(float Heater1T, float Heater2T)
+bool RPUcomm::TX_SetHeaters(float Heater1T, float Heater2T)
 {
     if (!Add_float(Heater1T)) return false;
     if (!Add_float(Heater2T)) return false;
    
-    TX_ASCII(PU_SET_HEATERS);
+    TX_ASCII(RPU_SET_HEATERS);
 
     return true;
 }
 
-bool PUComm::RX_SetHeaters(float * Heater1T, float * Heater2T)
+bool RPUcomm::RX_SetHeaters(float * Heater1T, float * Heater2T)
 {
     float temp1, temp2;
 
@@ -42,16 +41,16 @@ bool PUComm::RX_SetHeaters(float * Heater1T, float * Heater2T)
     return true;
 }
 
-bool PUComm::TX_LowPower(float survivalT)
+bool RPUcomm::TX_LowPower(float survivalT)
 {
     if (!Add_float(survivalT)) return false;
    
-    TX_ASCII(PU_GO_LOWPOWER);
+    TX_ASCII(RPU_GO_LOWPOWER);
 
     return true;
 }
 
-bool PUComm::RX_LowPower(float * survivalT)
+bool RPUcomm::RX_LowPower(float * survivalT)
 {
     float temp1;
 
@@ -62,16 +61,16 @@ bool PUComm::RX_LowPower(float * survivalT)
     return true;
 }
 
-bool PUComm::TX_Idle(int32_t TSENTMRate)
+bool RPUcomm::TX_Idle(int32_t TSENTMRate)
 {
     if (!Add_int32(TSENTMRate)) return false;
    
-    TX_ASCII(PU_GO_IDLE);
+    TX_ASCII(RPU_GO_IDLE);
 
     return true;
 }
 
-bool PUComm::RX_Idle(int32_t * TSENTMRate)
+bool RPUcomm::RX_Idle(int32_t * TSENTMRate)
 {
     int32_t temp1;
 
@@ -82,7 +81,7 @@ bool PUComm::RX_Idle(int32_t * TSENTMRate)
     return true;
 }
 
-bool PUComm::TX_WarmUp(float FLASH_T, float Heater_1_T, float Heater_2_T, int8_t FLASH_power, int8_t TSEN_power)
+bool RPUcomm::TX_WarmUp(float FLASH_T, float Heater_1_T, float Heater_2_T, int8_t FLASH_power, int8_t TSEN_power)
 {
     if (!Add_float(FLASH_T)) return false;
     if (!Add_float(Heater_1_T)) return false;
@@ -90,12 +89,12 @@ bool PUComm::TX_WarmUp(float FLASH_T, float Heater_1_T, float Heater_2_T, int8_t
     if (!Add_int8(FLASH_power)) return false;
     if (!Add_int8(TSEN_power)) return false;
    
-    TX_ASCII(PU_GO_WARMUP);
+    TX_ASCII(RPU_GO_WARMUP);
 
     return true;
 }
 
-bool PUComm::RX_WarmUp(float * FLASH_T, float * Heater_1_T, float * Heater_2_T, int8_t * FLASH_power, int8_t * TSEN_power)
+bool RPUcomm::RX_WarmUp(float * FLASH_T, float * Heater_1_T, float * Heater_2_T, int8_t * FLASH_power, int8_t * TSEN_power)
 {
     float temp1, temp2, temp3;
     int8_t temp4, temp5;
@@ -115,7 +114,7 @@ bool PUComm::RX_WarmUp(float * FLASH_T, float * Heater_1_T, float * Heater_2_T, 
     return true;
 }
 
-bool PUComm::TX_PreProfile(int32_t preTime, int32_t TM_period, int32_t data_rate, int8_t TSEN_power, int8_t ROPC_power, int8_t FLASH_power)
+bool RPUcomm::TX_PreProfile(int32_t preTime, int32_t TM_period, int32_t data_rate, int8_t TSEN_power, int8_t ROPC_power, int8_t FLASH_power)
 {
     if (!Add_int32(preTime)) return false;
     if (!Add_int32(TM_period)) return false;
@@ -124,12 +123,12 @@ bool PUComm::TX_PreProfile(int32_t preTime, int32_t TM_period, int32_t data_rate
     if (!Add_int8(ROPC_power)) return false;
     if (!Add_int8(FLASH_power)) return false;
    
-    TX_ASCII(PU_GO_PREPROFILE);
+    TX_ASCII(RPU_GO_PREPROFILE);
 
     return true;
 }
 
-bool PUComm::RX_PreProfile(int32_t * preTime, int32_t * TM_period, int32_t * data_rate, int8_t * TSEN_power, int8_t * ROPC_power, int8_t * FLASH_power)
+bool RPUcomm::RX_PreProfile(int32_t * preTime, int32_t * TM_period, int32_t * data_rate, int8_t * TSEN_power, int8_t * ROPC_power, int8_t * FLASH_power)
 {
     int32_t temp1, temp2, temp3;
     int8_t  temp4, temp5, temp6;
@@ -151,7 +150,7 @@ bool PUComm::RX_PreProfile(int32_t * preTime, int32_t * TM_period, int32_t * dat
     return true;
 }
 
-bool PUComm::TX_Profile(int32_t t_down, int32_t t_dwell, int32_t t_up, int32_t rate_profile, int32_t rate_dwell, int8_t TSEN_power, int8_t ROPC_power, int8_t FLASH_power, int8_t LoRa_TM)
+bool RPUcomm::TX_Profile(int32_t t_down, int32_t t_dwell, int32_t t_up, int32_t rate_profile, int32_t rate_dwell, int8_t TSEN_power, int8_t ROPC_power, int8_t FLASH_power, int8_t LoRa_TM)
 {
     if (!Add_uint16(t_down)) return false;
     if (!Add_uint16(t_dwell)) return false;
@@ -163,12 +162,12 @@ bool PUComm::TX_Profile(int32_t t_down, int32_t t_dwell, int32_t t_up, int32_t r
     if (!Add_uint8(FLASH_power)) return false;
     if (!Add_uint8(LoRa_TM)) return false;
    
-    TX_ASCII(PU_GO_PROFILE);
+    TX_ASCII(RPU_GO_PROFILE);
 
     return true;
 }
 
-bool PUComm::RX_Profile(int32_t * t_down, int32_t * t_dwell, int32_t * t_up, int32_t * rate_profile, int32_t * rate_dwell, int8_t * TSEN_power, int8_t * ROPC_power, int8_t * FLASH_power, int8_t * LoRa_TM)
+bool RPUcomm::RX_Profile(int32_t * t_down, int32_t * t_dwell, int32_t * t_up, int32_t * rate_profile, int32_t * rate_dwell, int8_t * TSEN_power, int8_t * ROPC_power, int8_t * FLASH_power, int8_t * LoRa_TM)
 {
     int32_t temp1, temp2, temp3, temp4, temp5;
     int8_t temp6, temp7, temp8, temp9;
@@ -196,19 +195,19 @@ bool PUComm::RX_Profile(int32_t * t_down, int32_t * t_dwell, int32_t * t_up, int
     return true;
 }
 
-bool PUComm::TX_UpdateGPS(uint32_t ZephyrGPSTime, float ZephyrGPSlat, float ZephyrGPSlon, uint16_t ZephyrGPSAlt)
+bool RPUcomm::TX_UpdateGPS(uint32_t ZephyrGPSTime, float ZephyrGPSlat, float ZephyrGPSlon, uint16_t ZephyrGPSAlt)
 {
     if (!Add_uint32(ZephyrGPSTime)) return false;
     if (!Add_float(ZephyrGPSlat)) return false;
     if (!Add_float(ZephyrGPSlon)) return false;
     if (!Add_uint16(ZephyrGPSAlt)) return false;
     
-    TX_ASCII(PU_UPDATE_GPS);
+    TX_ASCII(RPU_UPDATE_GPS);
 
     return true;
 }
 
-bool PUComm::RX_UpdateGPS(uint32_t * ZephyrGPSTime, float * ZephyrGPSlat, float * ZephyrGPSlon, uint16_t * ZephyrGPSAlt)
+bool RPUcomm::RX_UpdateGPS(uint32_t * ZephyrGPSTime, float * ZephyrGPSlat, float * ZephyrGPSlon, uint16_t * ZephyrGPSAlt)
 {
     uint32_t temp1;
     uint16_t temp4;
@@ -227,16 +226,16 @@ bool PUComm::RX_UpdateGPS(uint32_t * ZephyrGPSTime, float * ZephyrGPSlat, float 
     return true;
 }
 
-bool PUComm::TX_PULoRaStatus(uint16_t LoRaTXStatus)
+bool RPUcomm::TX_RPULoRaStatus(uint16_t LoRaTXStatus)
 {
     if(!Add_uint16(LoRaTXStatus)) return false;
 
-    TX_ASCII(PU_LORA_STATUS);
+    TX_ASCII(RPU_LORA_STATUS);
 
     return true;
 }
 
-bool PUComm::RX_PULoRaStatus(uint16_t * LoRaTXStatus)
+bool RPUcomm::RX_RPULoRaStatus(uint16_t * LoRaTXStatus)
 {
     uint16_t temp1;
 
@@ -246,16 +245,16 @@ bool PUComm::RX_PULoRaStatus(uint16_t * LoRaTXStatus)
     return true;
 }
 
-bool PUComm::TX_PULoRaTM(uint8_t LoRaTXTM)
+bool RPUcomm::TX_RPULoRaTM(uint8_t LoRaTXTM)
 {
     if(!Add_uint8(LoRaTXTM)) return false;
 
-    TX_ASCII(PU_LORA_TM);
+    TX_ASCII(RPU_LORA_TM);
 
     return true;
 }
 
-bool PUComm::RX_PULoRaTM(uint8_t * LoRaTXTM)
+bool RPUcomm::RX_RPULoRaTM(uint8_t * LoRaTXTM)
 {
     uint8_t temp1;
 
@@ -265,21 +264,21 @@ bool PUComm::RX_PULoRaTM(uint8_t * LoRaTXTM)
     return true;
 }
 
-bool PUComm::TX_Status(uint32_t PUTime, float VBattery, float ICharge, float Therm1T, float Therm2T, uint8_t HeaterStat)
+bool RPUcomm::TX_Status(uint32_t RPUTime, float VBattery, float ICharge, float Therm1T, float Therm2T, uint8_t HeaterStat)
 {
-    if (!Add_uint32(PUTime)) return false;
+    if (!Add_uint32(RPUTime)) return false;
     if (!Add_float(VBattery)) return false;
     if (!Add_float(ICharge)) return false;
     if (!Add_float(Therm1T)) return false;
     if (!Add_float(Therm2T)) return false;
     if (!Add_uint8(HeaterStat)) return false;
    
-    TX_ASCII(PU_STATUS);
+    TX_ASCII(RPU_STATUS);
 
     return true;
 }
 
-bool PUComm::RX_Status(uint32_t * PUTime, float * VBattery, float * ICharge, float * Therm1T, float * Therm2T, uint8_t * HeaterStat)
+bool RPUcomm::RX_Status(uint32_t * RPUTime, float * VBattery, float * ICharge, float * Therm1T, float * Therm2T, uint8_t * HeaterStat)
 {
     uint32_t temp1;
     float temp2, temp3, temp4, temp5;
@@ -293,7 +292,7 @@ bool PUComm::RX_Status(uint32_t * PUTime, float * VBattery, float * ICharge, flo
     if (!Get_uint8(&temp6)) return false;
 
 
-    *PUTime = temp1;
+    *RPUTime = temp1;
     *VBattery = temp2;
     *ICharge = temp3;
     *Therm1T = temp4;
@@ -303,18 +302,18 @@ bool PUComm::RX_Status(uint32_t * PUTime, float * VBattery, float * ICharge, flo
     return true;
 }
 
-// -- PU to PIB error string
+// -- RPU to RATCHuTS error string
 
-bool PUComm::TX_Error(const char * error)
+bool RPUcomm::TX_Error(const char * error)
 {
     //if (Add_string(error)) return false;
 
-    TX_String(PU_ERROR,error);
+    TX_String(RPU_ERROR,error);
 
     return true;
 }
 
-bool PUComm::RX_Error(char * error, uint8_t buffer_size)
+bool RPUcomm::RX_Error(char * error, uint8_t buffer_size)
 {
     return Get_string(error, buffer_size);
 }

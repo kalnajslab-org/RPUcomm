@@ -1,56 +1,55 @@
 /*
- *  PUComm.h
- *  Author:  Lars Kalnajs
- *  Created: September 2019
+ *  RPUcomm.h
+ *  Derived from PUcomm.h
  *  
  *  This file declares an Arduino library (C++ class) that implements the communication
- *  between the PIB and the PU. The class inherits its protocol from the SerialComm
+ *  between the RATCHuTS and the RPU. The class inherits its protocol from the SerialComm
  *  class.
  */
 
-#ifndef PUComm_H
-#define PUComm_H
+#ifndef RPUcomm_H
+#define RPUcomm_H
 
 #include "SerialComm.h"
 
-enum PUMessages_t : uint8_t {
-    PU_NO_MESSAGE = 0,
+enum RPUMessages_t : uint8_t {
+    RPU_NO_MESSAGE = 0,
 
-    // PIB -> PU (no params)
-    PU_SEND_STATUS, //1
-    PU_SEND_PROFILE_RECORD, //2
-    PU_SEND_TSEN_RECORD, //3
-    PU_RESET, //4
+    // RATCHuTS -> RPU (no params)
+    RPU_SEND_STATUS, //1
+    RPU_SEND_PROFILE_RECORD, //2
+    RPU_SEND_TSEN_RECORD, //3
+    RPU_RESET, //4
 
-    // PIB -> PU (with params)
-    PU_SET_HEATERS, //5
-    PU_GO_LOWPOWER, //6
-    PU_GO_IDLE,  //7
-    PU_GO_WARMUP, //8
-    PU_GO_PREPROFILE, //9
-    PU_GO_PROFILE, //10
-    PU_UPDATE_GPS, //11
-    PU_LORA_STATUS,
-    PU_LORA_TM,
+    // RATCHuTS -> RPU (with params)
+    RPU_SET_HEATERS, //5
+    RPU_GO_LOWPOWER, //6
+    RPU_GO_IDLE,  //7
+    RPU_GO_WARMUP, //8
+    RPU_GO_PREPROFILE, //9
+    RPU_GO_PROFILE, //10
+    RPU_UPDATE_GPS, //11
+    RPU_LORA_STATUS,
+    RPU_LORA_TM,
 
-    // PU -> PIB (no params)
-    PU_IS_DOCKED, //12
-    PU_NO_MORE_RECORDS, //13
-    PU_PROFILE_RECORD,  // 14 binary transfer
-    PU_TSEN_RECORD, // 15 binary transfer
+    // RPU -> RATCHuTS (no params)
+    RPU_IS_DOCKED, //12
+    RPU_NO_MORE_RECORDS, //13
+    RPU_PROFILE_RECORD,  // 14 binary transfer
+    RPU_TSEN_RECORD, // 15 binary transfer
 
-    // PU -> PIB (with params)
-    PU_STATUS, //16
-    PU_ERROR //17
+    // RPU -> RATCHuTS (with params)
+    RPU_STATUS, //16
+    RPU_ERROR //17
 };
 
 
-class PUComm : public SerialComm {
+class RPUcomm : public SerialComm {
 public:
-    PUComm(Stream * serial_port);
-    ~PUComm() { };
+    RPUcomm(Stream * serial_port);
+    ~RPUcomm() { };
 
-    // PIB -> PU (with params) -----------------------
+    // RATCHuTS -> RPU (with params) -----------------------
     bool TX_SetHeaters(float Heater1T, float Heater2T); //Set the heater temperature (parameter not state)
     bool RX_SetHeaters(float * Heater1T, float * Heater2T);
 
@@ -72,19 +71,19 @@ public:
     bool TX_UpdateGPS(uint32_t ZephyrGPSTime, float ZephyrGPSlat, float ZephyrGPSlon, uint16_t ZephyrGPSAlt);
     bool RX_UpdateGPS(uint32_t * ZephyrGPSTime, float * ZephyrGPSlat, float * ZephyrGPSlon, uint16_t * ZephyrGPSAlt);
 
-    bool TX_PULoRaStatus(uint16_t LoRaTXStatus);
-    bool RX_PULoRaStatus(uint16_t * LoRaTXStatus);
+    bool TX_RPULoRaStatus(uint16_t LoRaTXStatus);
+    bool RX_RPULoRaStatus(uint16_t * LoRaTXStatus);
 
-    bool TX_PULoRaTM(uint8_t LoRaTXTM);
-    bool RX_PULoRaTM(uint8_t * LoRaTXTM);
+    bool TX_RPULoRaTM(uint8_t LoRaTXTM);
+    bool RX_RPULoRaTM(uint8_t * LoRaTXTM);
 
-    // PU -> PIB (with params) -----------------------
+    // RPU -> RATCHuTS (with params) -----------------------
 
-    bool TX_Status(uint32_t PUTime, float VBattery, float ICharge, float Therm1T, float Therm2T, uint8_t HeaterStat);
-    bool RX_Status(uint32_t * PUTime, float * VBattery, float * ICharge, float * Therm1T, float * Therm2T, uint8_t * HeaterStat);
+    bool TX_Status(uint32_t RPUTime, float VBattery, float ICharge, float Therm1T, float Therm2T, uint8_t HeaterStat);
+    bool RX_Status(uint32_t * RPUTime, float * VBattery, float * ICharge, float * Therm1T, float * Therm2T, uint8_t * HeaterStat);
 
     bool TX_Error(const char * error);
     bool RX_Error(char * error, uint8_t buffer_size);
 };
 
-#endif /* PUComm_H */
+#endif /* RPUcomm_H */
