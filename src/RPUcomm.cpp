@@ -16,251 +16,33 @@ RPUcomm::RPUcomm(Stream * serial_port)
 
 // RATCHuTS -> RPU (with params) ---------------------------
 
-bool RPUcomm::TX_SetHeaters(float Heater1T, float Heater2T)
-{
-    if (!Add_float(Heater1T)) return false;
-    if (!Add_float(Heater2T)) return false;
-   
-    TX_ASCII(RPU_SET_HEATERS);
+// RATCHuTS -> RPU: 2026 commands -------------------------
 
+bool RPUcomm::TX_GoMeasure(int32_t duration, int32_t rate, int8_t opc_power, int8_t tdlas_power, int8_t tsen_power)
+{
+    if (!Add_int32(duration))    return false;
+    if (!Add_int32(rate))        return false;
+    if (!Add_int8(opc_power))    return false;
+    if (!Add_int8(tdlas_power))  return false;
+    if (!Add_int8(tsen_power))   return false;
+    TX_ASCII(RPU_GO_MEASURE);
     return true;
 }
 
-bool RPUcomm::RX_SetHeaters(float * Heater1T, float * Heater2T)
+bool RPUcomm::RX_GoMeasure(int32_t * duration, int32_t * rate, int8_t * opc_power, int8_t * tdlas_power, int8_t * tsen_power)
 {
-    float temp1, temp2;
-
-    if (!Get_float(&temp1)) return false;
-    if (!Get_float(&temp2)) return false;
-   
-    *Heater1T = temp1;
-    *Heater2T = temp2;
-
-    Serial.println(temp1);
-
-    return true;
-}
-
-bool RPUcomm::TX_LowPower(float survivalT)
-{
-    if (!Add_float(survivalT)) return false;
-   
-    TX_ASCII(RPU_GO_LOWPOWER);
-
-    return true;
-}
-
-bool RPUcomm::RX_LowPower(float * survivalT)
-{
-    float temp1;
-
-    if (!Get_float(&temp1)) return false;
-   
-    *survivalT = temp1;
-
-    return true;
-}
-
-bool RPUcomm::TX_Idle(int32_t TSENTMRate)
-{
-    if (!Add_int32(TSENTMRate)) return false;
-   
-    TX_ASCII(RPU_GO_IDLE);
-
-    return true;
-}
-
-bool RPUcomm::RX_Idle(int32_t * TSENTMRate)
-{
-    int32_t temp1;
-
-    if (!Get_int32(&temp1)) return false;
-   
-    *TSENTMRate = temp1;
-
-    return true;
-}
-
-bool RPUcomm::TX_WarmUp(float FLASH_T, float Heater_1_T, float Heater_2_T, int8_t FLASH_power, int8_t TSEN_power)
-{
-    if (!Add_float(FLASH_T)) return false;
-    if (!Add_float(Heater_1_T)) return false;
-    if (!Add_float(Heater_2_T)) return false;
-    if (!Add_int8(FLASH_power)) return false;
-    if (!Add_int8(TSEN_power)) return false;
-   
-    TX_ASCII(RPU_GO_WARMUP);
-
-    return true;
-}
-
-bool RPUcomm::RX_WarmUp(float * FLASH_T, float * Heater_1_T, float * Heater_2_T, int8_t * FLASH_power, int8_t * TSEN_power)
-{
-    float temp1, temp2, temp3;
-    int8_t temp4, temp5;
-
-    if (!Get_float(&temp1)) return false;
-    if (!Get_float(&temp2)) return false;
-    if (!Get_float(&temp3)) return false;
-    if (!Get_int8(&temp4)) return false;
-    if (!Get_int8(&temp5)) return false;
-
-    *FLASH_T = temp1;
-    *Heater_1_T = temp2;
-    *Heater_2_T = temp3;
-    *FLASH_power = temp4;
-    *TSEN_power = temp5;
-
-    return true;
-}
-
-bool RPUcomm::TX_PreProfile(int32_t preTime, int32_t TM_period, int32_t data_rate, int8_t TSEN_power, int8_t ROPC_power, int8_t FLASH_power)
-{
-    if (!Add_int32(preTime)) return false;
-    if (!Add_int32(TM_period)) return false;
-    if (!Add_int32(data_rate)) return false;
-    if (!Add_int8(TSEN_power)) return false;
-    if (!Add_int8(ROPC_power)) return false;
-    if (!Add_int8(FLASH_power)) return false;
-   
-    TX_ASCII(RPU_GO_PREPROFILE);
-
-    return true;
-}
-
-bool RPUcomm::RX_PreProfile(int32_t * preTime, int32_t * TM_period, int32_t * data_rate, int8_t * TSEN_power, int8_t * ROPC_power, int8_t * FLASH_power)
-{
-    int32_t temp1, temp2, temp3;
-    int8_t  temp4, temp5, temp6;
-
-    if (!Get_int32(&temp1)) return false;
-    if (!Get_int32(&temp2)) return false;
-    if (!Get_int32(&temp3)) return false;
-    if (!Get_int8(&temp4)) return false;
-    if (!Get_int8(&temp5)) return false;
-    if (!Get_int8(&temp6)) return false;
-
-    *preTime = temp1;
-    *TM_period = temp2;
-    *data_rate = temp3;
-    *TSEN_power = temp4;
-    *ROPC_power = temp5;
-    *FLASH_power = temp6;
-
-    return true;
-}
-
-bool RPUcomm::TX_Profile(int32_t t_down, int32_t t_dwell, int32_t t_up, int32_t rate_profile, int32_t rate_dwell, int8_t TSEN_power, int8_t ROPC_power, int8_t FLASH_power, int8_t LoRa_TM)
-{
-    if (!Add_uint16(t_down)) return false;
-    if (!Add_uint16(t_dwell)) return false;
-    if (!Add_uint16(t_up)) return false;
-    if (!Add_uint16(rate_profile)) return false;
-    if (!Add_uint16(rate_dwell)) return false;
-    if (!Add_uint8(TSEN_power)) return false;
-    if (!Add_uint8(ROPC_power)) return false;
-    if (!Add_uint8(FLASH_power)) return false;
-    if (!Add_uint8(LoRa_TM)) return false;
-   
-    TX_ASCII(RPU_GO_PROFILE);
-
-    return true;
-}
-
-bool RPUcomm::RX_Profile(int32_t * t_down, int32_t * t_dwell, int32_t * t_up, int32_t * rate_profile, int32_t * rate_dwell, int8_t * TSEN_power, int8_t * ROPC_power, int8_t * FLASH_power, int8_t * LoRa_TM)
-{
-    int32_t temp1, temp2, temp3, temp4, temp5;
-    int8_t temp6, temp7, temp8, temp9;
-
-    if (!Get_int32(&temp1)) return false;
-    if (!Get_int32(&temp2)) return false;
-    if (!Get_int32(&temp3)) return false;
-    if (!Get_int32(&temp4)) return false;
-    if (!Get_int32(&temp5)) return false;
-    if (!Get_int8(&temp6)) return false;
-    if (!Get_int8(&temp7)) return false;
-    if (!Get_int8(&temp8)) return false;
-    if (!Get_int8(&temp9)) return false;
-
-    *t_down = temp1;
-    *t_dwell = temp2;
-    *t_up = temp3;
-    *rate_profile = temp4;
-    *rate_dwell = temp5;
-    *TSEN_power = temp6;
-    *ROPC_power = temp7;
-    *FLASH_power = temp8;
-    *LoRa_TM = temp9;
-
-    return true;
-}
-
-bool RPUcomm::TX_UpdateGPS(uint32_t ZephyrGPSTime, float ZephyrGPSlat, float ZephyrGPSlon, uint16_t ZephyrGPSAlt)
-{
-    if (!Add_uint32(ZephyrGPSTime)) return false;
-    if (!Add_float(ZephyrGPSlat)) return false;
-    if (!Add_float(ZephyrGPSlon)) return false;
-    if (!Add_uint16(ZephyrGPSAlt)) return false;
-    
-    TX_ASCII(RPU_UPDATE_GPS);
-
-    return true;
-}
-
-bool RPUcomm::RX_UpdateGPS(uint32_t * ZephyrGPSTime, float * ZephyrGPSlat, float * ZephyrGPSlon, uint16_t * ZephyrGPSAlt)
-{
-    uint32_t temp1;
-    uint16_t temp4;
-    float temp2, temp3;
-
-    if (!Get_uint32(&temp1)) return false;
-    if (!Get_float(&temp2)) return false;
-    if (!Get_float(&temp3)) return false;
-    if (!Get_uint16(&temp4)) return false;
-   
-    *ZephyrGPSTime= temp1;
-    *ZephyrGPSlat = temp2;
-    *ZephyrGPSlon = temp3;
-    *ZephyrGPSAlt = temp4;
-
-    return true;
-}
-
-bool RPUcomm::TX_RPULoRaStatus(uint16_t LoRaTXStatus)
-{
-    if(!Add_uint16(LoRaTXStatus)) return false;
-
-    TX_ASCII(RPU_LORA_STATUS);
-
-    return true;
-}
-
-bool RPUcomm::RX_RPULoRaStatus(uint16_t * LoRaTXStatus)
-{
-    uint16_t temp1;
-
-    if(!Get_uint16(&temp1)) return false;
-
-    *LoRaTXStatus = temp1;
-    return true;
-}
-
-bool RPUcomm::TX_RPULoRaTM(uint8_t LoRaTXTM)
-{
-    if(!Add_uint8(LoRaTXTM)) return false;
-
-    TX_ASCII(RPU_LORA_TM);
-
-    return true;
-}
-
-bool RPUcomm::RX_RPULoRaTM(uint8_t * LoRaTXTM)
-{
-    uint8_t temp1;
-
-    if(!Get_uint8(&temp1)) return false;
-
-    *LoRaTXTM = temp1;
+    int32_t t, r;
+    int8_t  o, d, s;
+    if (!Get_int32(&t)) return false;
+    if (!Get_int32(&r)) return false;
+    if (!Get_int8(&o))  return false;
+    if (!Get_int8(&d))  return false;
+    if (!Get_int8(&s))  return false;
+    *duration   = t;
+    *rate       = r;
+    *opc_power  = o;
+    *tdlas_power = d;
+    *tsen_power = s;
     return true;
 }
 

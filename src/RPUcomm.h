@@ -13,34 +13,18 @@
 #include "SerialComm.h"
 
 enum RPUMessages_t : uint8_t {
-    RPU_NO_MESSAGE = 0,
-
-    // RATCHuTS -> RPU (no params)
-    RPU_SEND_STATUS, //1
-    RPU_SEND_PROFILE_RECORD, //2
-    RPU_SEND_TSEN_RECORD, //3
-    RPU_RESET, //4
-
-    // RATCHuTS -> RPU (with params)
-    RPU_SET_HEATERS, //5
-    RPU_GO_LOWPOWER, //6
-    RPU_GO_IDLE,  //7
-    RPU_GO_WARMUP, //8
-    RPU_GO_PREPROFILE, //9
-    RPU_GO_PROFILE, //10
-    RPU_UPDATE_GPS, //11
-    RPU_LORA_STATUS,
-    RPU_LORA_TM,
-
-    // RPU -> RATCHuTS (no params)
-    RPU_IS_DOCKED, //12
-    RPU_NO_MORE_RECORDS, //13
-    RPU_PROFILE_RECORD,  // 14 binary transfer
-    RPU_TSEN_RECORD, // 15 binary transfer
-
-    // RPU -> RATCHuTS (with params)
-    RPU_STATUS, //16
-    RPU_ERROR //17
+    RPU_NO_MESSAGE = 0,        // —
+    RPU_SEND_STATUS,           // RATCHUTS→RPU
+    RPU_SEND_RECORDS,          // RATCHUTS→RPU
+    RPU_GO_MEASURE,            // RATCHUTS→RPU | duration(int32_t s), rate(int32_t s), opc(int8_t), tdlas(int8_t), tsen(int8_t)
+    RPU_GO_STANDBY,            // RATCHUTS→RPU
+    RPU_SET_BATT_T,            // RATCHUTS→RPU | setpoint(float °C)
+    RPU_SET_V_LOW_BATT,        // RATCHUTS→RPU | threshold(float V)
+    RPU_SET_V_CRIT_BATT,       // RATCHUTS→RPU | threshold(float V)
+    RPU_SET_STATUS_RATE,       // RATCHUTS→RPU | interval(uint32_t s)
+    RPU_NO_MORE_RECORDS,       // RPU→RATCHUTS
+    RPU_STATUS,                // RPU→RATCHUTS | time(uint32_t ms), vbat(float V), icharge(float A), therm1(float °C), therm2(float °C), heater(uint8_t)
+    RPU_ERROR                  // RPU→RATCHUTS | message(string)
 };
 
 
@@ -50,32 +34,9 @@ public:
     ~RPUcomm() { };
 
     // RATCHuTS -> RPU (with params) -----------------------
-    bool TX_SetHeaters(float Heater1T, float Heater2T); //Set the heater temperature (parameter not state)
-    bool RX_SetHeaters(float * Heater1T, float * Heater2T);
+    bool TX_GoMeasure(int32_t duration, int32_t rate, int8_t opc_power, int8_t tdlas_power, int8_t tsen_power);
+    bool RX_GoMeasure(int32_t * duration, int32_t * rate, int8_t * opc_power, int8_t * tdlas_power, int8_t * tsen_power);
 
-    bool TX_LowPower(float survivalT); //go low power, heater set to survival_temp
-    bool RX_LowPower(float * survivalT);
-
-    bool TX_Idle(int32_t TSENTMRate); //idle, TSEN TM packet ready every TMRate seconds
-    bool RX_Idle(int32_t * TSENTMRate); //idle, TSEN TM packet ready every TMRate seconds
-
-    bool TX_WarmUp(float FLASH_T, float Heater_1_T, float Heater_2_T, int8_t FLASH_power, int8_t TSEN_power);
-    bool RX_WarmUp(float * FLASH_T, float * Heater_1_T, float * Heater_2_T, int8_t * FLASH_power, int8_t * TSEN_power);
-
-    bool TX_PreProfile(int32_t preTime, int32_t TM_period, int32_t data_rate, int8_t TSEN_power, int8_t ROPC_power, int8_t FLASH_power);
-    bool RX_PreProfile(int32_t * preTime, int32_t * TM_period, int32_t * data_rate, int8_t * TSEN_power, int8_t * ROPC_power, int8_t * FLASH_power);
-
-    bool TX_Profile(int32_t t_down, int32_t t_dwell, int32_t t_up, int32_t rate_profile, int32_t rate_dwell, int8_t TSEN_power, int8_t ROPC_power, int8_t FLASH_power, int8_t LoRa_TM);
-    bool RX_Profile(int32_t * t_down, int32_t * t_dwell, int32_t * t_up, int32_t * rate_profile, int32_t * rate_dwell, int8_t * TSEN_power, int8_t * ROPC_power, int8_t * FLASH_power, int8_t * LoRa_TM);
-
-    bool TX_UpdateGPS(uint32_t ZephyrGPSTime, float ZephyrGPSlat, float ZephyrGPSlon, uint16_t ZephyrGPSAlt);
-    bool RX_UpdateGPS(uint32_t * ZephyrGPSTime, float * ZephyrGPSlat, float * ZephyrGPSlon, uint16_t * ZephyrGPSAlt);
-
-    bool TX_RPULoRaStatus(uint16_t LoRaTXStatus);
-    bool RX_RPULoRaStatus(uint16_t * LoRaTXStatus);
-
-    bool TX_RPULoRaTM(uint8_t LoRaTXTM);
-    bool RX_RPULoRaTM(uint8_t * LoRaTXTM);
 
     // RPU -> RATCHuTS (with params) -----------------------
 
