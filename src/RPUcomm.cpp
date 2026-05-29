@@ -1,5 +1,5 @@
 /*
- *  RPUcomm.cpp
+ *  RPUComm.cpp
  *  Derived from PUcomm.cpp
  *  
  *  This file implements an Arduino library (C++ class) that implements the communication
@@ -7,9 +7,9 @@
  *  class.
  */
 
-#include "RPUcomm.h"
+#include "RPUComm.h"
 
-RPUcomm::RPUcomm(Stream * serial_port)
+RPUComm::RPUComm(Stream * serial_port)
     : SerialComm(serial_port)
 {
 }
@@ -18,7 +18,7 @@ RPUcomm::RPUcomm(Stream * serial_port)
 
 // RATCHuTS -> RPU: 2026 commands -------------------------
 
-bool RPUcomm::TX_GoMeasure(int32_t duration, int32_t rate, int8_t opc_power, int8_t tdlas_power, int8_t tsen_power)
+bool RPUComm::TX_GoMeasure(int32_t duration, int32_t rate, int8_t opc_power, int8_t tdlas_power, int8_t tsen_power)
 {
     if (!Add_int32(duration))    return false;
     if (!Add_int32(rate))        return false;
@@ -29,7 +29,7 @@ bool RPUcomm::TX_GoMeasure(int32_t duration, int32_t rate, int8_t opc_power, int
     return true;
 }
 
-bool RPUcomm::RX_GoMeasure(int32_t * duration, int32_t * rate, int8_t * opc_power, int8_t * tdlas_power, int8_t * tsen_power)
+bool RPUComm::RX_GoMeasure(int32_t * duration, int32_t * rate, int8_t * opc_power, int8_t * tdlas_power, int8_t * tsen_power)
 {
     int32_t t, r;
     int8_t  o, d, s;
@@ -46,7 +46,7 @@ bool RPUcomm::RX_GoMeasure(int32_t * duration, int32_t * rate, int8_t * opc_powe
     return true;
 }
 
-bool RPUcomm::TX_Status(uint32_t RPUTime, float VBattery, float ICharge, float Therm1T, float Therm2T, uint8_t HeaterStat)
+bool RPUComm::TX_Status(uint32_t RPUTime, float VBattery, float ICharge, float Therm1T, float Therm2T, uint8_t HeaterStat)
 {
     if (!Add_uint32(RPUTime)) return false;
     if (!Add_float(VBattery)) return false;
@@ -60,7 +60,7 @@ bool RPUcomm::TX_Status(uint32_t RPUTime, float VBattery, float ICharge, float T
     return true;
 }
 
-bool RPUcomm::RX_Status(uint32_t * RPUTime, float * VBattery, float * ICharge, float * Therm1T, float * Therm2T, uint8_t * HeaterStat)
+bool RPUComm::RX_Status(uint32_t * RPUTime, float * VBattery, float * ICharge, float * Therm1T, float * Therm2T, uint8_t * HeaterStat)
 {
     uint32_t temp1;
     float temp2, temp3, temp4, temp5;
@@ -86,7 +86,7 @@ bool RPUcomm::RX_Status(uint32_t * RPUTime, float * VBattery, float * ICharge, f
 
 // -- RPU to RATCHuTS error string
 
-bool RPUcomm::TX_Error(const char * error)
+bool RPUComm::TX_Error(const char * error)
 {
     //if (Add_string(error)) return false;
 
@@ -95,7 +95,7 @@ bool RPUcomm::TX_Error(const char * error)
     return true;
 }
 
-bool RPUcomm::RX_Error(char * error, uint8_t buffer_size)
+bool RPUComm::RX_Error(char * error, uint8_t buffer_size)
 {
     return Get_string(error, buffer_size);
 }

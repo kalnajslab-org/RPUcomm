@@ -1,5 +1,5 @@
 /*
- *  RPUcomm.h
+ *  RPUComm.h
  *  Derived from PUcomm.h
  *  
  *  This file declares an Arduino library (C++ class) that implements the communication
@@ -7,8 +7,8 @@
  *  class.
  */
 
-#ifndef RPUcomm_H
-#define RPUcomm_H
+#ifndef RPUComm_H
+#define RPUComm_H
 
 #include "SerialComm.h"
 
@@ -28,10 +28,10 @@ enum RPUMessages_t : uint8_t {
 };
 
 
-class RPUcomm : public SerialComm {
+class RPUComm : public SerialComm {
 public:
-    RPUcomm(Stream * serial_port);
-    ~RPUcomm() { };
+    RPUComm(Stream * serial_port);
+    ~RPUComm() { };
 
     // RATCHuTS -> RPU (with params) -----------------------
     bool TX_GoMeasure(int32_t duration, int32_t rate, int8_t opc_power, int8_t tdlas_power, int8_t tsen_power);
@@ -47,4 +47,4 @@ public:
     bool RX_Error(char * error, uint8_t buffer_size);
 };
 
-#endif /* RPUcomm_H */
+#endif /* RPUComm_H */

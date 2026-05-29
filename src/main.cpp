@@ -1,7 +1,7 @@
 #include <Arduino.h>
-#include "RPUcomm.h"
+#include "RPUComm.h"
 
-RPUcomm rpu(&Serial1);
+RPUComm rpu(&Serial1);
 
 void setup() {
     int8_t  i1, i2, i3;
