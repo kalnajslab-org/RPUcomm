@@ -52,7 +52,7 @@ public:
 // ---------------------------------------------------------------------------
 // RPU status packet bit-field widths
 // Shared between RPU (encoder) and RATCHuTS (decoder).
-// Packet version 1 — 276 bits = 35 bytes, big-endian (max packet size 250 bytes)
+// Packet version 1 — 320 bits = 40 bytes, big-endian (max packet size 250 bytes)
 // ---------------------------------------------------------------------------
 constexpr uint8_t  RPU_PKT_VERSION      = 1;
 constexpr uint8_t  RPU_PKT_VER_BITS     = 4;   // packet format version
@@ -70,9 +70,11 @@ constexpr uint8_t  RPU_PKT_LAT_BITS     = 21;  // (lat + 90)  × 10000  (0–1 8
 constexpr uint8_t  RPU_PKT_LON_BITS     = 22;  // (lon + 180) × 10000  (0–3 600 000)
 constexpr uint8_t  RPU_PKT_ALT_BITS     = 16;  // altitude, m (0–65 535)
 constexpr uint8_t  RPU_PKT_SATS_BITS    = 5;   // satellite count (0–31)
+constexpr uint8_t  RPU_PKT_GPS_DATE_BITS = 19; // GPS date, DDMMYY (Year is 20YY) — same encoding as ECUComm
+constexpr uint8_t  RPU_PKT_GPS_TIME_BITS = 25; // GPS time, HHMMSSCC (seconds in 100ths) — same encoding as ECUComm
 constexpr size_t   RPU_PKT_FW_VER_LEN   = 8;   // firmware-version string, fixed-length, NUL-padded
 constexpr size_t   RPU_PKT_FW_VER_BITS  = RPU_PKT_FW_VER_LEN * 8;
-constexpr size_t   RPU_PKT_BYTES        = 35;  // ceil(276 / 8); must be <= 250
+constexpr size_t   RPU_PKT_BYTES        = 40;  // ceil(320 / 8); must be <= 250
 
 // ---------------------------------------------------------------------------
 // RPUPacket
@@ -105,6 +107,8 @@ public:
     void setLon(double degrees);
     void setAlt(float meters);
     void setSats(uint8_t count);
+    void setGpsDate(uint32_t date);   // DDMMYY, as returned by TinyGPSDate::value()
+    void setGpsTime(uint32_t time);   // HHMMSSCC, as returned by TinyGPSTime::value()
     void setVer(const char* ver);
 
     // Getters (packed encoding -> engineering units) ---------
@@ -127,6 +131,8 @@ public:
     double   getLon()        const { return (lon_raw_ / 10000.0) - 180.0; }
     float    getAlt()        const { return (float)alt_raw_; }
     uint8_t  getSats()       const { return sats_; }
+    uint32_t getGpsDate()    const { return gps_date_; }
+    uint32_t getGpsTime()    const { return gps_time_; }
     const char* getVer()     const { return ver_; }
 
     // Byte-level pack / unpack using the bit-field widths above
@@ -158,6 +164,8 @@ private:
     uint32_t lon_raw_      = 0;   // (lon + 180) x10000
     uint16_t alt_raw_      = 0;   // m
     uint8_t  sats_         = 0;
+    uint32_t gps_date_     = 0;   // DDMMYY
+    uint32_t gps_time_     = 0;   // HHMMSSCC
     char     ver_[RPU_PKT_FW_VER_LEN] = {0}; // NUL-padded firmware-version string
 };
 

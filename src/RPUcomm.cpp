@@ -124,6 +124,8 @@ void RPUPacket::setLat(double degrees)         { lat_raw_      = (uint32_t)const
 void RPUPacket::setLon(double degrees)         { lon_raw_      = (uint32_t)constrain((int)((degrees + 180.0) * 10000.0), 0, 3600000); }
 void RPUPacket::setAlt(float meters)           { alt_raw_      = (uint16_t)constrain((int)meters, 0, 65535); }
 void RPUPacket::setSats(uint8_t count)         { sats_         = (uint8_t)constrain((int)count, 0, 31); }
+void RPUPacket::setGpsDate(uint32_t date)      { gps_date_     = (uint32_t)constrain((int)date, 0, 524287); }
+void RPUPacket::setGpsTime(uint32_t time)      { gps_time_     = (uint32_t)constrain((int)time, 0, 33554431); }
 
 void RPUPacket::setVer(const char * ver)
 {
@@ -160,6 +162,8 @@ bool RPUPacket::encode(uint8_t * buf, size_t buf_size) const
     bsw.write_unchecked<uint32_t>(lon_raw_,         RPU_PKT_LON_BITS);
     bsw.write_unchecked<uint16_t>(alt_raw_,         RPU_PKT_ALT_BITS);
     bsw.write_unchecked<uint8_t> (sats_,            RPU_PKT_SATS_BITS);
+    bsw.write_unchecked<uint32_t>(gps_date_,        RPU_PKT_GPS_DATE_BITS);
+    bsw.write_unchecked<uint32_t>(gps_time_,        RPU_PKT_GPS_TIME_BITS);
 
     for (size_t i = 0; i < RPU_PKT_FW_VER_LEN; ++i) {
         bsw.write_unchecked<uint8_t>((uint8_t)ver_[i], 8);
@@ -195,6 +199,8 @@ bool RPUPacket::decode(const uint8_t * buf, size_t buf_size)
     lon_raw_      = bsr.read_unchecked<uint32_t>(RPU_PKT_LON_BITS);
     alt_raw_      = bsr.read_unchecked<uint16_t>(RPU_PKT_ALT_BITS);
     sats_         = bsr.read_unchecked<uint8_t> (RPU_PKT_SATS_BITS);
+    gps_date_     = bsr.read_unchecked<uint32_t>(RPU_PKT_GPS_DATE_BITS);
+    gps_time_     = bsr.read_unchecked<uint32_t>(RPU_PKT_GPS_TIME_BITS);
 
     for (size_t i = 0; i < RPU_PKT_FW_VER_LEN; ++i) {
         ver_[i] = (char)bsr.read_unchecked<uint8_t>(8);
@@ -216,12 +222,14 @@ int RPUPacket::toJSON(char * buf, size_t buf_size) const
         "\"vin\":%.1f,\"v5\":%.1f,\"bat_v\":%.1f,\"bat_duty\":%u,\"chg_i\":%.1f,"
         "\"bat_t\":%.1f,\"pcb_t\":%.1f,"
         "\"pump_i\":%.0f,\"opc_i\":%.0f,\"tsen_i\":%.0f,\"tdlas_i\":%.0f,\"heater_i\":%.0f,"
-        "\"lat\":%.6f,\"lon\":%.6f,\"alt\":%.1f,\"sats\":%u}",
+        "\"lat\":%.6f,\"lon\":%.6f,\"alt\":%.1f,\"sats\":%u,"
+        "\"gps_date\":%lu,\"gps_time\":%lu}",
         board_id_, ver_, state_str, wdt_count_,
         getVin(), getV5V(), getBatV(), heater_duty_, getChgI(),
         getBatT(), getPcbT(),
         getPumpI(), getOpcI(), getTsenI(), getTdlasI(), getHeaterI(),
-        getLat(), getLon(), getAlt(), sats_);
+        getLat(), getLon(), getAlt(), sats_,
+        (unsigned long)gps_date_, (unsigned long)gps_time_);
 }
 
 
