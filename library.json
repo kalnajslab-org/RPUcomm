@@ -1,6 +1,5 @@
 {
   "name": "RPUComm",
-  "version": "...",
   "dependencies": {
     "SerialComm": "https://github.com/kalnajslab-org/SerialComm.git"
   }
