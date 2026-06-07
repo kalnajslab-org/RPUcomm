@@ -7,7 +7,7 @@
  *  class.
  */
 
-#include "RPUComm.h"
+#include "RPUcomm.h"
 #include <etl/bit_stream.h>
 
 RPUComm::RPUComm(Stream * serial_port)
@@ -223,7 +223,7 @@ int RPUPacket::toJSON(char * buf, size_t buf_size) const
         "\"bat_t\":%.1f,\"pcb_t\":%.1f,"
         "\"pump_i\":%.0f,\"opc_i\":%.0f,\"tsen_i\":%.0f,\"tdlas_i\":%.0f,\"heater_i\":%.0f,"
         "\"lat\":%.6f,\"lon\":%.6f,\"alt\":%.1f,\"sats\":%u,"
-        "\"gps_date\":%lu,\"gps_time\":%lu}",
+        "\"date\":%lu,\"time\":%lu}",
         board_id_, ver_, state_str, wdt_count_,
         getVin(), getV5V(), getBatV(), heater_duty_, getChgI(),
         getBatT(), getPcbT(),
