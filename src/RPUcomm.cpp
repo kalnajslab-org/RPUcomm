@@ -19,31 +19,34 @@ RPUComm::RPUComm(Stream * serial_port)
 
 // RATCHuTS -> RPU: 2026 commands -------------------------
 
-bool RPUComm::TX_GoMeasure(int32_t duration, int32_t rate, int8_t opc_power, int8_t tdlas_power, int8_t tsen_power)
+bool RPUComm::TX_GoMeasure(int32_t duration, int32_t rate, int8_t opc_power, int8_t tdlas_power, int8_t tsen_power, int8_t rs41_power)
 {
     if (!Add_int32(duration))    return false;
     if (!Add_int32(rate))        return false;
     if (!Add_int8(opc_power))    return false;
     if (!Add_int8(tdlas_power))  return false;
     if (!Add_int8(tsen_power))   return false;
+    if (!Add_int8(rs41_power))   return false;
     TX_ASCII(RPU_GO_MEASURE);
     return true;
 }
 
-bool RPUComm::RX_GoMeasure(int32_t * duration, int32_t * rate, int8_t * opc_power, int8_t * tdlas_power, int8_t * tsen_power)
+bool RPUComm::RX_GoMeasure(int32_t * duration, int32_t * rate, int8_t * opc_power, int8_t * tdlas_power, int8_t * tsen_power, int8_t * rs41_power)
 {
     int32_t t, r;
-    int8_t  o, d, s;
+    int8_t  o, d, s, g;
     if (!Get_int32(&t)) return false;
     if (!Get_int32(&r)) return false;
     if (!Get_int8(&o))  return false;
     if (!Get_int8(&d))  return false;
     if (!Get_int8(&s))  return false;
+    if (!Get_int8(&g))  return false;
     *duration   = t;
     *rate       = r;
     *opc_power  = o;
     *tdlas_power = d;
     *tsen_power = s;
+    *rs41_power = g;
     return true;
 }
 
