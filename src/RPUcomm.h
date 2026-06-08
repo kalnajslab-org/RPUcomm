@@ -36,8 +36,8 @@ public:
     ~RPUComm() { };
 
     // RATCHuTS -> RPU (with params) -----------------------
-    bool TX_GoMeasure(int32_t duration, int32_t rate, int8_t opc_power, int8_t tdlas_power, int8_t tsen_power);
-    bool RX_GoMeasure(int32_t * duration, int32_t * rate, int8_t * opc_power, int8_t * tdlas_power, int8_t * tsen_power);
+    bool TX_GoMeasure(int32_t duration, int32_t rate, int8_t opc_power, int8_t tdlas_power, int8_t tsen_power, int8_t rs41_power);
+    bool RX_GoMeasure(int32_t * duration, int32_t * rate, int8_t * opc_power, int8_t * tdlas_power, int8_t * tsen_power, int8_t * rs41_power);
 
     bool TX_SetStatusRate(uint32_t interval);
     bool RX_SetStatusRate(uint32_t * interval);
