@@ -210,14 +210,15 @@ bool RPUPacket::decode(const uint8_t * buf, size_t buf_size)
     return true;
 }
 
-int RPUPacket::toJSON(char * buf, size_t buf_size) const
+String RPUPacket::toJSON() const
 {
     static const char * state_names[] = { "STANDBY", "MEASURE", "ERROR" };
     const char * state_str = (state_ < (sizeof(state_names) / sizeof(state_names[0])))
                              ? state_names[state_]
                              : "UNKNOWN";
 
-    return snprintf(buf, buf_size,
+    char buf[350];
+    snprintf(buf, sizeof(buf),
         "{\"id\":\"%04X\",\"ver\":\"%s\",\"state\":\"%s\",\"wdt_n\":%u,"
         "\"vin\":%.1f,\"v5\":%.1f,\"bat_v\":%.1f,\"bat_duty\":%u,\"chg_i\":%.1f,"
         "\"bat_t\":%.1f,\"pcb_t\":%.1f,"
@@ -230,6 +231,8 @@ int RPUPacket::toJSON(char * buf, size_t buf_size) const
         getPumpI(), getOpcI(), getTsenI(), getTdlasI(), getHeaterI(),
         getLat(), getLon(), getAlt(), sats_,
         (unsigned long)gps_date_, (unsigned long)gps_time_);
+
+    return String(buf);
 }
 
 

@@ -139,10 +139,8 @@ public:
     bool encode(uint8_t* buf, size_t buf_size) const;
     bool decode(const uint8_t* buf, size_t buf_size);
 
-    // JSON serialisation in engineering units. Returns the number of
-    // characters that would be written, as per snprintf() (a return
-    // value >= buf_size means the output was truncated).
-    int toJSON(char* buf, size_t buf_size) const;
+    // JSON serialisation in engineering units.
+    String toJSON() const;
 
 private:
     uint16_t board_id_     = 0;
