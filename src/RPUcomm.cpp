@@ -47,6 +47,21 @@ bool RPUComm::RX_GoMeasure(int32_t * duration, int32_t * rate, int8_t * opc_powe
     return true;
 }
 
+bool RPUComm::TX_SetStatusRate(uint32_t interval)
+{
+    if (!Add_uint32(interval)) return false;
+    TX_ASCII(RPU_SET_STATUS_RATE);
+    return true;
+}
+
+bool RPUComm::RX_SetStatusRate(uint32_t * interval)
+{
+    uint32_t temp;
+    if (!Get_uint32(&temp)) return false;
+    *interval = temp;
+    return true;
+}
+
 bool RPUComm::TX_Status(uint32_t RPUTime, float VBattery, float ICharge, float Therm1T, float Therm2T, uint8_t HeaterStat)
 {
     if (!Add_uint32(RPUTime)) return false;
