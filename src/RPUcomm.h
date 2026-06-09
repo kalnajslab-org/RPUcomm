@@ -17,8 +17,8 @@ enum RPUMessages_t : uint8_t {
     RPU_SEND_STATUS,           // RATCHUTS→RPU
     RPU_SEND_RECORDS,          // RATCHUTS→RPU
     RPU_RESET,                 // RATCHUTS→RPU
-    RPU_GO_MEASURE,            // RATCHUTS→RPU | duration(int32_t s), rate(int32_t s), opc(int8_t), tdlas(int8_t), tsen(int8_t)
-    RPU_GO_STANDBY,            // RATCHUTS→RPU
+    RPU_GO_MEASURE,            // RATCHUTS→RPU | duration(int32_t s), rate(int32_t s), bat_temp(float °C), opc(int8_t), tdlas(int8_t), tsen(int8_t), rs41(int8_t)
+    RPU_GO_STANDBY,            // RATCHUTS→RPU | bat_temp(float °C)
     RPU_SET_BATT_T,            // RATCHUTS→RPU | setpoint(float °C)
     RPU_SET_V_LOW_BATT,        // RATCHUTS→RPU | threshold(float V)
     RPU_SET_V_CRIT_BATT,       // RATCHUTS→RPU | threshold(float V)
@@ -36,8 +36,11 @@ public:
     ~RPUComm() { };
 
     // RATCHuTS -> RPU (with params) -----------------------
-    bool TX_GoMeasure(int32_t duration, int32_t rate, int8_t opc_power, int8_t tdlas_power, int8_t tsen_power, int8_t rs41_power);
-    bool RX_GoMeasure(int32_t * duration, int32_t * rate, int8_t * opc_power, int8_t * tdlas_power, int8_t * tsen_power, int8_t * rs41_power);
+    bool TX_GoMeasure(int32_t duration, int32_t rate, float bat_temp, int8_t opc_power, int8_t tdlas_power, int8_t tsen_power, int8_t rs41_power);
+    bool RX_GoMeasure(int32_t * duration, int32_t * rate, float * bat_temp, int8_t * opc_power, int8_t * tdlas_power, int8_t * tsen_power, int8_t * rs41_power);
+
+    bool TX_GoStandby(float bat_temp);
+    bool RX_GoStandby(float * bat_temp);
 
     bool TX_SetStatusRate(uint32_t interval);
     bool RX_SetStatusRate(uint32_t * interval);
