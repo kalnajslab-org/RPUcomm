@@ -86,14 +86,21 @@ bool RPUComm::RX_SetStatusRate(uint32_t * interval)
 
 bool RPUComm::TX_Status(const char * json)
 {
-    TX_String(RPU_STATUS, json);
+    uint16_t length = (uint16_t) strlen(json);
 
-    return true;
+    AssignBinaryTXBuffer((uint8_t *) json, length, length);
+
+    return TX_Bin(RPU_STATUS);
 }
 
-bool RPUComm::RX_Status(char * json, uint8_t buffer_size)
+bool RPUComm::RX_Status(char * json, uint16_t buffer_size)
 {
-    return Get_string(json, buffer_size);
+    if (binary_rx.bin_length >= buffer_size) return false;
+
+    memcpy(json, binary_rx.bin_buffer, binary_rx.bin_length);
+    json[binary_rx.bin_length] = '\0';
+
+    return true;
 }
 
 // -- RPU to RATCHuTS error string

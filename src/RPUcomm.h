@@ -25,7 +25,7 @@ enum RPUMessages_t : uint8_t {
     RPU_SET_STATUS_RATE,       // RATCHUTS→RPU | interval(uint32_t s)
     RPU_PROFILE_RECORD,        // RATCHUTS→RPU
     RPU_NO_MORE_RECORDS,       // RPU→RATCHUTS
-    RPU_STATUS,                // RPU→RATCHUTS | JSON(string)
+    RPU_STATUS,                // RPU→RATCHUTS | JSON (binary payload, raw string bytes)
     RPU_ERROR                  // RPU→RATCHUTS | message(string)
 };
 
@@ -49,7 +49,7 @@ public:
     // RPU -> RATCHuTS (with params) -----------------------
 
     bool TX_Status(const char * json);
-    bool RX_Status(char * json, uint8_t buffer_size);
+    bool RX_Status(char * json, uint16_t buffer_size);
 
     bool TX_Error(const char * error);
     bool RX_Error(char * error, uint8_t buffer_size);
