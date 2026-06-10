@@ -84,42 +84,16 @@ bool RPUComm::RX_SetStatusRate(uint32_t * interval)
     return true;
 }
 
-bool RPUComm::TX_Status(uint32_t RPUTime, float VBattery, float ICharge, float Therm1T, float Therm2T, uint8_t HeaterStat)
+bool RPUComm::TX_Status(const char * json)
 {
-    if (!Add_uint32(RPUTime)) return false;
-    if (!Add_float(VBattery)) return false;
-    if (!Add_float(ICharge)) return false;
-    if (!Add_float(Therm1T)) return false;
-    if (!Add_float(Therm2T)) return false;
-    if (!Add_uint8(HeaterStat)) return false;
-   
-    TX_ASCII(RPU_STATUS);
+    TX_String(RPU_STATUS, json);
 
     return true;
 }
 
-bool RPUComm::RX_Status(uint32_t * RPUTime, float * VBattery, float * ICharge, float * Therm1T, float * Therm2T, uint8_t * HeaterStat)
+bool RPUComm::RX_Status(char * json, uint8_t buffer_size)
 {
-    uint32_t temp1;
-    float temp2, temp3, temp4, temp5;
-    uint8_t temp6;
-
-    if (!Get_uint32(&temp1)) return false;
-    if (!Get_float(&temp2)) return false;
-    if (!Get_float(&temp3)) return false;
-    if (!Get_float(&temp4)) return false;
-    if (!Get_float(&temp5)) return false;
-    if (!Get_uint8(&temp6)) return false;
-
-
-    *RPUTime = temp1;
-    *VBattery = temp2;
-    *ICharge = temp3;
-    *Therm1T = temp4;
-    *Therm2T = temp5;
-    *HeaterStat = temp6;
-
-    return true;
+    return Get_string(json, buffer_size);
 }
 
 // -- RPU to RATCHuTS error string
