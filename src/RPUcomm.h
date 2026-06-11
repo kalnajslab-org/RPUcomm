@@ -176,12 +176,15 @@ private:
 // ---------------------------------------------------------------------------
 // RPU report bit-field widths
 // Shared between RPU (encoder) and RATCHuTS (decoder).
-// Packet version 1 — 1140 bits = 143 bytes, big-endian.
+// Packet version 1 — 1132 bits = 142 bytes, big-endian.
 // Carries every field measured once per tickMeasure() iteration, in the same
 // order they are gathered. Sent in bulk over the docking connector (no LoRa
 // size limit), so most fields use a fixed-point scale rather than raw floats;
 // the TDLAS spectroscopy values (whose ranges aren't well characterised) are
 // packed as raw IEEE-754 floats to avoid lossy guesses.
+//
+// Many of the following bit widths are shared for multiple fields; 
+// for example, all the subsystem currents are 12 bits with the same scale factor
 // ---------------------------------------------------------------------------
 constexpr uint8_t  RPU_RPT_VERSION       = 1;
 constexpr uint8_t  RPU_RPT_VER_BITS      = 4;    // packet format version
@@ -197,7 +200,7 @@ constexpr uint8_t  RPU_RPT_ALT_BITS      = 16;   // altitude, m
 constexpr uint8_t  RPU_RPT_SATS_BITS     = 5;    // satellite count
 constexpr uint8_t  RPU_RPT_GPS_DATE_BITS = 19;   // DDMMYY
 constexpr uint8_t  RPU_RPT_GPS_TIME_BITS = 25;   // HHMMSSCC
-constexpr uint8_t  RPU_RPT_GPS_AGE_BITS  = 16;   // GPS fix age, s
+constexpr uint8_t  RPU_RPT_GPS_AGE_BITS  = 8;    // GPS fix age, s, clamped (0–255 s)
 constexpr uint8_t  RPU_RPT_TEMP_BITS     = 12;   // (T + 100) x10  (-100.0 to 309.5 °C, 0.1 °C res)
 constexpr uint8_t  RPU_RPT_HUM_BITS      = 10;   // RH x10   (0–102.3 %)
 constexpr uint8_t  RPU_RPT_PRES_BITS     = 17;   // pressure x100 (0–1310.71 mb)
@@ -211,7 +214,7 @@ constexpr uint8_t  RPU_RPT_INDX_BITS     = 8;    // TDLAS spectrum index
 constexpr uint8_t  RPU_RPT_STATUS_BITS   = 8;    // RS41 module status/error
 constexpr uint8_t  RPU_RPT_HDG_BITS      = 9;    // RS41 magnetic heading, deg (0–360)
 constexpr uint8_t  RPU_RPT_ACCEL_BITS    = 16;   // RS41 acceleration, mG (signed)
-constexpr size_t   RPU_RPT_BYTES         = 143;  // ceil(1140 / 8)
+constexpr size_t   RPU_RPT_BYTES         = 142;  // ceil(1132 / 8)
 
 // ---------------------------------------------------------------------------
 // RPUReport

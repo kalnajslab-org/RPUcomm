@@ -141,12 +141,15 @@ match `ECUComm`'s conventions, so `RPUReport` reuses them unchanged:
 | `sats` | uint32 | raw, 0–31 | 5 |
 | `gps_date` | uint32 | DDMMYY | 19 |
 | `gps_time` | uint32 | HHMMSSCC | 25 |
+| `gps_age` | uint32 | seconds, clamped 0–255 | 8 |
 
 One new GPS-related field not present in `RPUPacket`: GPS fix age
-(`location.age()/1000`, seconds). `ECUReport_t` clamps this to 8 bits
-(0–255 s), but since size isn't constrained here it was given a full
-**uint16, 16 bits** (0–65535 s) so a long-stale fix doesn't get clamped
-silently.
+(`location.age()/1000`, seconds). Initially given a full **uint16, 16 bits**
+(0–65535 s) so a long-stale fix wouldn't get clamped silently, but later
+revised down to match `ECUReport_t`'s **8 bits, clamped to 0–255 s** as part
+of trimming `RPUReport`'s overall size — a fix more than 4 minutes stale is
+already "very stale" for any practical purpose, so the extra range wasn't
+worth 8 bits.
 
 ### Board / pump / battery temperatures
 
@@ -248,7 +251,7 @@ one consistent API.
 
 ## Final bit layout / packet size
 
-Total payload: 4 (version header) + 1136 (fields) = **1140 bits = 143 bytes**
+Total payload: 4 (version header) + 1128 (fields) = **1132 bits = 142 bytes**
 (`RPU_RPT_BYTES`). All constants are named `RPU_RPT_*` in `RPUcomm.h` to keep
 them distinct from the `RPU_PKT_*` constants used by `RPUPacket`.
 
@@ -267,7 +270,7 @@ them distinct from the `RPU_PKT_*` constants used by `RPUPacket`.
 | `RPU_RPT_SATS_BITS` | 5 | satellite count |
 | `RPU_RPT_GPS_DATE_BITS` | 19 | DDMMYY |
 | `RPU_RPT_GPS_TIME_BITS` | 25 | HHMMSSCC |
-| `RPU_RPT_GPS_AGE_BITS` | 16 | GPS fix age, s |
+| `RPU_RPT_GPS_AGE_BITS` | 8 | GPS fix age, s, clamped (0–255 s) |
 | `RPU_RPT_TEMP_BITS` | 12 | `(T+100) x10` (-100.0 to 309.5 °C) |
 | `RPU_RPT_HUM_BITS` | 10 | RS41 humidity, x10 (0–102.3 %) |
 | `RPU_RPT_PRES_BITS` | 17 | RS41 pressure, x100 (0–1310.71 mb) |
