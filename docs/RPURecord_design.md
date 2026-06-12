@@ -48,7 +48,7 @@ Present in every record, in this order:
 
 | # | Field | Setter / Getter | Encoding | Bits |
 |---|---|---|---|---|
-| 1 | round-robin index | `setRoundRobinIdx`/`getRoundRobinIdx` | 0–7, selects which slow-field slot follows | 4 |
+| 1 | round-robin index | managed internally (see "Round-robin cycling") | 0–7, selects which slow-field slot follows | 4 |
 | 2 | elapsed time | `setElapsedS`/`getElapsedS` | seconds since `MeasureStartMillis`, raw uint16 (0–65535 s) | 16 |
 | 3 | GPS altitude | `setAlt`/`getAlt` | meters, raw uint16 | 16 |
 | 4 | GPS latitude delta | `setLatDelta`/`getLatDelta` | `(lat - GPSStartLat) x50000`, signed int16 (±0.65534°, ~2.2 m res at equator) | 16 |
@@ -151,12 +151,21 @@ of the 24-bit count (`raw >> 8`), discarding the bottom 8 bits of precision.
 
 ## Round-robin cycling
 
-`RPU.cpp` keeps a `RoundRobinIdx` (0–7) that is reset to 0 in `enterMeasure()`
-and incremented (mod 8) after every `tickMeasure()` push. Every tick, *all*
-22 slow-field setters are called with the latest readings (so the in-memory
-`RPURecord` is always fully populated), but `encode()` only transmits the
-40-bit slot for the current `RoundRobinIdx`. Over 8 consecutive records, all
-22 slow fields are eventually transmitted once.
+The round-robin slot index (0–7) is managed internally by `RPURecord` via a
+shared rotation counter — callers never see or set its value directly:
+
+- `RPURecord::resetRotation()` resets the rotation to slot 0. `RPU.cpp` calls
+  this once per MEASURE session, in `enterMeasure()`.
+- Each `RPURecord` constructor captures the current rotation slot at
+  construction time.
+- `RPURecord::advanceRotation()` advances the rotation (mod 8) to the next
+  slot. `RPU.cpp` calls this once per `tickMeasure()`, after the record has
+  been encoded/pushed.
+
+Every tick, *all* 22 slow-field setters are called with the latest readings
+(so the in-memory `RPURecord` is always fully populated), but `encode()` only
+transmits the 40-bit slot for the record's captured round-robin index. Over 8
+consecutive records, all 22 slow fields are eventually transmitted once.
 
 ## Final bit layout / packet size
 

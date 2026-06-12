@@ -236,7 +236,14 @@ constexpr size_t   RPU_RECORD_BYTES           = 40; // ceil((4 + 270 + 40 + 6) /
 // ---------------------------------------------------------------------------
 class RPURecord {
 public:
-    RPURecord() = default;
+    // Captures the current round-robin slot (see resetRotation()/advanceRotation()).
+    RPURecord();
+
+    // Resets the round-robin slot rotation to slot 0. Call once per MEASURE session.
+    static void resetRotation();
+
+    // Advances the round-robin slot rotation to the next slot (mod 8). Call once per record.
+    static void advanceRotation();
 
     // Setters (engineering units -> packed encoding) ---------
 
@@ -260,7 +267,6 @@ public:
     void setTdlasBkg(float value);
     void setTdlasPeak(float value);
     void setTdlasRatio(float value);
-    void setRoundRobinIdx(uint8_t idx);
 
     // Slow / round-robin fields (period = 8)
     void setOpcD500(uint16_t count);
@@ -308,7 +314,6 @@ public:
     float    getTdlasBkg()     const { return tdlas_bkg_raw_ / 100.0f; }
     float    getTdlasPeak()    const { return tdlas_peak_raw_ / 10.0f; }
     float    getTdlasRatio()   const { return tdlas_ratio_raw_ / 1000.0f; }
-    uint8_t  getRoundRobinIdx() const { return round_robin_idx_; }
 
     // Slow / round-robin fields
     uint16_t getOpcD500()      const { return opc_d500_; }
@@ -362,7 +367,10 @@ private:
     uint16_t tdlas_bkg_raw_      = 0; // x100, provisional (0-40.95)
     uint8_t  tdlas_peak_raw_     = 0; // x10, provisional (0-25.5)
     uint16_t tdlas_ratio_raw_    = 0; // x1000, provisional (0-1.023)
-    uint8_t  round_robin_idx_    = 0; // 0-7
+    uint8_t  round_robin_idx_    = 0; // 0-7, captured at construction from next_round_robin_idx_
+
+    // Shared rotation state advanced via resetRotation()/advanceRotation().
+    static uint8_t next_round_robin_idx_;
 
     // Slow / round-robin fields (period = 8)
     uint16_t opc_d500_           = 0;

@@ -257,6 +257,22 @@ String RPUPacket::toJSON() const
 // RPURecord
 // ---------------------------------------------------------------------------
 
+uint8_t RPURecord::next_round_robin_idx_ = 0;
+
+RPURecord::RPURecord() : round_robin_idx_(next_round_robin_idx_)
+{
+}
+
+void RPURecord::resetRotation()
+{
+    next_round_robin_idx_ = 0;
+}
+
+void RPURecord::advanceRotation()
+{
+    next_round_robin_idx_ = (next_round_robin_idx_ + 1) % 8;
+}
+
 // Fast fields (period = 1) ----------------------------------
 void RPURecord::setElapsedS(uint32_t seconds)  { elapsed_s_     = (uint16_t)constrain((long)seconds, 0L, 65535L); }
 void RPURecord::setAlt(float meters)           { alt_raw_       = (uint16_t)constrain((int)meters, 0, 65535); }
@@ -277,7 +293,6 @@ void RPURecord::setTdlasMrAvg(float value)     { tdlas_mr_avg_raw_ = (uint16_t)c
 void RPURecord::setTdlasBkg(float value)       { tdlas_bkg_raw_    = (uint16_t)constrain((int)(value * 100.0f), 0, 4095); }
 void RPURecord::setTdlasPeak(float value)      { tdlas_peak_raw_   = (uint8_t)constrain((int)(value * 10.0f), 0, 255); }
 void RPURecord::setTdlasRatio(float value)     { tdlas_ratio_raw_  = (uint16_t)constrain((int)(value * 1000.0f), 0, 1023); }
-void RPURecord::setRoundRobinIdx(uint8_t idx)  { round_robin_idx_  = (uint8_t)constrain((int)idx, 0, 7); }
 
 // Slow / round-robin fields (period = 8) ---------------------
 void RPURecord::setOpcD500(uint16_t count)     { opc_d500_  = count; }
