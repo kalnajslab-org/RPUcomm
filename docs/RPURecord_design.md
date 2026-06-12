@@ -5,10 +5,10 @@ This document records the design discussion and scaling decisions behind the
 
 ## Goal
 
-`RPURecord` bit-packs one `tickMeasure()` sample into a **fixed 40-byte
-(320-bit) record**, matching the "Profiler TM Format 2026" spec
-(`docs/Profiler TM Format 2026.xlsx`): 5000 records per profile x 40 bytes =
-200,000 bytes (~195 KiB), close to the spec's 190,000-byte target. This is
+`RPURecord` bit-packs one `tickMeasure()` sample into a **fixed 38-byte
+(304-bit) record**, matching the "Profiler TM Format 2026" spec
+(`docs/Profiler TM Format 2026.xlsx`): 5000 records per profile x 38 bytes =
+190,000 bytes, exactly the spec's target. This is
 `RPU_RPT_VERSION = 1`, the first released `RPURecord` wire format.
 
 It follows the same pattern as `RPUPacket`:
@@ -27,7 +27,7 @@ several raw `float32` TDLAS fields and RS41 housekeeping fields that the 2026
 spec doesn't carry at full rate, into 134 bytes/record. At 5000 records that
 would be 670,000 bytes/profile — too large. That draft was never released, so
 this design supersedes it directly as `RPU_RPT_VERSION = 1`, trimming the
-per-record payload to 40 bytes by:
+per-record payload to 38 bytes by:
 
 - dropping fields the spec doesn't carry at all (RS41 `valid`, internal temp,
   module status/error, pcb supply V, lsm303 temp, pcb heater flag, frame
@@ -42,7 +42,7 @@ per-record payload to 40 bytes by:
 
 ## Field groups
 
-### Fast fields (period = 1, 270 bits/record)
+### Fast fields (period = 1, 260 bits/record)
 
 Present in every record, in this order:
 
@@ -65,13 +65,12 @@ Present in every record, in this order:
 | 15 | RS41 RH | `setRs41Humidity`/`getRs41Humidity` | `x100`, 0–655.35 % | 16 |
 | 16 | RS41 temp-of-RH | `setRs41HSensorT`/`getRs41HSensorT` | `(T+100) x100`, -100.00 to 555.35 °C | 16 |
 | 17 | TDLAS VMR_ave | `setTdlasMrAvg`/`getTdlasMrAvg` | `x10`, 0–102.3 (provisional, see TDLAS section) | 10 |
-| 18 | *(reserved)* | none | always 0 on encode, skipped on decode | 10 |
-| 19 | TDLAS bkg | `setTdlasBkg`/`getTdlasBkg` | `x100`, 0–40.95 (provisional) | 12 |
-| 20 | TDLAS peak | `setTdlasPeak`/`getTdlasPeak` | `x10`, 0–25.5 (provisional) | 8 |
-| 21 | TDLAS ratio | `setTdlasRatio`/`getTdlasRatio` | `x1000`, 0–1.023 (provisional) | 10 |
+| 18 | TDLAS bkg | `setTdlasBkg`/`getTdlasBkg` | `x100`, 0–40.95 (provisional) | 12 |
+| 19 | TDLAS peak | `setTdlasPeak`/`getTdlasPeak` | `x10`, 0–25.5 (provisional) | 8 |
+| 20 | TDLAS ratio | `setTdlasRatio`/`getTdlasRatio` | `x1000`, 0–1.023 (provisional) | 10 |
 
-13 fields x 16 bits (208) + 3 fields x 4 bits (12) + 3 fields x 10 bits (30) +
-1 field x 12 bits (12) + 1 field x 8 bits (8) = **270 bits**.
+13 fields x 16 bits (208) + 3 fields x 4 bits (12) + 2 fields x 10 bits (20) +
+1 field x 12 bits (12) + 1 field x 8 bits (8) = **260 bits**.
 
 ### Slow / round-robin fields (period = 8, one 40-bit slot/record)
 
@@ -103,9 +102,10 @@ record.
 
 `TDLASData` (`RPUTDLAS.h`) and `RPUtest.cpp` agree on the available TDLAS
 fields: `mr_avg`, `bkg`, `peak`, `ratio`, `batt`, `therm_1`, `therm_2`, `indx`,
-`spec_1`-`spec_4`. None of these have documented physical ranges, and the
-spec's "VMR_min" field has **no corresponding source field** in the current
-TDLAS firmware at all.
+`spec_1`-`spec_4`. None of these have documented physical ranges. The spec's
+"VMR_min" field has **no corresponding source field** in the current TDLAS
+firmware at all, and is not carried by `RPURecord` (its 10 bits were dropped
+from the spec layout entirely, shrinking the record from 40 to 38 bytes).
 
 Decisions:
 
@@ -113,11 +113,6 @@ Decisions:
   x100, x10, x1000 respectively) chosen to give a plausible range with the
   spec's bit widths (10/12/8/10 bits). These are **TBD placeholders** —
   revisit once real TDLAS data ranges are characterized.
-- `VMR_min` (10 bits in the spec) has no data source. Its bits are encoded as
-  `RPU_RPT_RESERVED_BITS`: always written as 0 by `encode()`, read and
-  discarded by `decode()`, with no setter/getter. This preserves the planned
-  record length (and the spec's bit layout) for when/if a VMR_min source
-  becomes available.
 - `spec_1`-`spec_4` are packed as a **raw 16-bit passthrough** (`(uint16_t)`
   cast of the `float` value, clamped 0–65535) — also provisional, pending a
   real scale.
@@ -169,8 +164,8 @@ consecutive records, all 22 slow fields are eventually transmitted once.
 
 ## Final bit layout / packet size
 
-Total payload: 4 (version) + 270 (fast fields) + 40 (one round-robin slot) +
-6 (trailing pad) = **320 bits = 40 bytes** (`RPU_RECORD_BYTES`).
+Total payload: 4 (version) + 260 (fast fields) + 40 (one round-robin slot)
+= **304 bits = 38 bytes** (`RPU_RECORD_BYTES`), no padding needed.
 
 | Constant | Bits | Used for |
 |---|---|---|
@@ -186,7 +181,6 @@ Total payload: 4 (version) + 270 (fast fields) + 40 (one round-robin slot) +
 | `RPU_RPT_RS41_P_BITS` | 16 | pressure `x10` (0–6553.5 mb) |
 | `RPU_RPT_RS41_RH_BITS` | 16 | RH `x100` (0–655.35 %) |
 | `RPU_RPT_TDLAS_VMR_BITS` | 10 | TDLAS VMR_ave `x10`, provisional (0–102.3) |
-| `RPU_RPT_RESERVED_BITS` | 10 | reserved (spec: TDLAS VMR_min — not available from current TDLAS firmware) |
 | `RPU_RPT_TDLAS_BKG_BITS` | 12 | TDLAS bkg `x100`, provisional (0–40.95) |
 | `RPU_RPT_TDLAS_PEAK_BITS` | 8 | TDLAS peak `x10`, provisional (0–25.5) |
 | `RPU_RPT_TDLAS_RATIO_BITS` | 10 | TDLAS ratio `x1000`, provisional (0–1.023) |
@@ -200,7 +194,6 @@ Total payload: 4 (version) + 270 (fast fields) + 40 (one round-robin slot) +
 | `RPU_RPT_VOLT_BITS` | 12 | battery voltage `x100` (0–40.95 V) |
 | `RPU_RPT_HEATER_BITS` | 4 | heater status (bit0: battery heater on) |
 | `RPU_RPT_SLOT_PAD_BITS` | 8 | padding within the two-field 40-bit slots (indices 0–5) |
-| `RPU_RPT_PAD_BITS` | 6 | trailing reserved padding to reach a byte boundary |
 
 ## Open items / not yet done
 
@@ -209,7 +202,6 @@ Total payload: 4 (version) + 270 (fast fields) + 40 (one round-robin slot) +
   per profile in a header/status message — not part of `RPURecord`.
 - TDLAS scales (`VMR_ave`, `bkg`, `peak`, `ratio`, `spec_1`-`4`) are
   placeholders pending real instrument range/resolution data.
-- `VMR_min` has no data source and its 10 bits are always zero.
 - The `-Wformat-truncation` warning GCC may emit for `RPURecord::toJSON()` is
   a known false positive — the underlying values are bounded by their bit
   widths, so the worst-case `%f`/`%.*f` buffer size GCC assumes is

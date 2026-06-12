@@ -345,7 +345,6 @@ bool RPURecord::encode(uint8_t * buf, size_t buf_size) const
     bsw.write_unchecked<uint16_t>(rs41_humidity_raw_,RPU_RPT_RS41_RH_BITS);
     bsw.write_unchecked<uint16_t>(rs41_hsensor_t_raw_, RPU_RPT_RS41_T_BITS);
     bsw.write_unchecked<uint16_t>(tdlas_mr_avg_raw_, RPU_RPT_TDLAS_VMR_BITS);
-    bsw.write_unchecked<uint16_t>(0,                 RPU_RPT_RESERVED_BITS);   // spec: TDLAS VMR_min, not available
     bsw.write_unchecked<uint16_t>(tdlas_bkg_raw_,    RPU_RPT_TDLAS_BKG_BITS);
     bsw.write_unchecked<uint8_t> (tdlas_peak_raw_,   RPU_RPT_TDLAS_PEAK_BITS);
     bsw.write_unchecked<uint16_t>(tdlas_ratio_raw_,  RPU_RPT_TDLAS_RATIO_BITS);
@@ -398,8 +397,6 @@ bool RPURecord::encode(uint8_t * buf, size_t buf_size) const
             break;
     }
 
-    bsw.write_unchecked<uint8_t>(0, RPU_RPT_PAD_BITS);
-
     return true;
 }
 
@@ -429,7 +426,6 @@ bool RPURecord::decode(const uint8_t * buf, size_t buf_size)
     rs41_humidity_raw_  = bsr.read_unchecked<uint16_t>(RPU_RPT_RS41_RH_BITS);
     rs41_hsensor_t_raw_ = bsr.read_unchecked<uint16_t>(RPU_RPT_RS41_T_BITS);
     tdlas_mr_avg_raw_   = bsr.read_unchecked<uint16_t>(RPU_RPT_TDLAS_VMR_BITS);
-    bsr.read_unchecked<uint16_t>(RPU_RPT_RESERVED_BITS);  // spec: TDLAS VMR_min, not available
     tdlas_bkg_raw_      = bsr.read_unchecked<uint16_t>(RPU_RPT_TDLAS_BKG_BITS);
     tdlas_peak_raw_     = bsr.read_unchecked<uint8_t> (RPU_RPT_TDLAS_PEAK_BITS);
     tdlas_ratio_raw_    = bsr.read_unchecked<uint16_t>(RPU_RPT_TDLAS_RATIO_BITS);
@@ -481,8 +477,6 @@ bool RPURecord::decode(const uint8_t * buf, size_t buf_size)
             heater_stat_  = bsr.read_unchecked<uint8_t> (RPU_RPT_HEATER_BITS);
             break;
     }
-
-    bsr.read_unchecked<uint8_t>(RPU_RPT_PAD_BITS);  // trailing reserved padding
 
     return true;
 }

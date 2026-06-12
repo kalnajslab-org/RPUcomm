@@ -176,16 +176,17 @@ private:
 // ---------------------------------------------------------------------------
 // RPU report bit-field widths
 // Shared between RPU (encoder) and RATCHuTS (decoder).
-// Packet version 1 — 314 bits + 6-bit pad = 320 bits = 40 bytes, big-endian.
+// Packet version 1 — 304 bits = 38 bytes, big-endian, no padding.
 //
-// Matches the "Profiler TM Format 2026" spec: 5000 records/profile at 40
-// bytes each (~195 KiB). Each record carries 21 "fast" fields (period = 1,
-// present every record) plus one fixed-size 40-bit "slot" from a round-robin
-// rotation of 22 "slow" fields (period = 8 — each slow field is therefore
-// updated roughly once every 8 records). The round-robin index is itself one
-// of the fast fields, so a decoder always knows which slow fields are valid
-// in a given record's slot. The slot is a fixed RPU_RPT_SLOT_BITS regardless
-// of index, so the overall record length never varies.
+// Matches the "Profiler TM Format 2026" spec: 5000 records/profile at 38
+// bytes each (190,000 bytes, exactly the spec's target). Each record carries
+// 20 "fast" fields (period = 1, present every record) plus one fixed-size
+// 40-bit "slot" from a round-robin rotation of 22 "slow" fields (period = 8
+// — each slow field is therefore updated roughly once every 8 records). The
+// round-robin index is itself one of the fast fields, so a decoder always
+// knows which slow fields are valid in a given record's slot. The slot is a
+// fixed RPU_RPT_SLOT_BITS regardless of index, so the overall record length
+// never varies.
 // ---------------------------------------------------------------------------
 constexpr uint8_t  RPU_RPT_VERSION       = 1;
 constexpr uint8_t  RPU_RPT_VER_BITS      = 4;    // packet format version
@@ -203,7 +204,6 @@ constexpr uint8_t  RPU_RPT_RS41_T_BITS     = 16; // (T + 100) x100  (-100.00 to 
 constexpr uint8_t  RPU_RPT_RS41_P_BITS     = 16; // pressure x10    (0–6553.5 mb)
 constexpr uint8_t  RPU_RPT_RS41_RH_BITS    = 16; // RH x100         (0–655.35 %)
 constexpr uint8_t  RPU_RPT_TDLAS_VMR_BITS  = 10; // TDLAS VMR_ave x10, provisional (0–102.3)
-constexpr uint8_t  RPU_RPT_RESERVED_BITS   = 10; // reserved (spec: TDLAS VMR_min — not available from current TDLAS firmware)
 constexpr uint8_t  RPU_RPT_TDLAS_BKG_BITS  = 12; // TDLAS bkg x100, provisional (0–40.95)
 constexpr uint8_t  RPU_RPT_TDLAS_PEAK_BITS = 8;  // TDLAS peak x10, provisional (0–25.5)
 constexpr uint8_t  RPU_RPT_TDLAS_RATIO_BITS= 10; // TDLAS ratio x1000, provisional (0–1.023)
@@ -220,8 +220,7 @@ constexpr uint8_t  RPU_RPT_HEATER_BITS     = 4;  // heater status (bit0: battery
 constexpr uint8_t  RPU_RPT_SLOT_PAD_BITS   = 8;  // padding within the two-field 40-bit slots (indices 0-5)
 constexpr size_t   RPU_RPT_SLOT_BITS       = 40; // fixed round-robin slot size
 
-constexpr uint8_t  RPU_RPT_PAD_BITS        = 6;  // trailing reserved padding to reach a byte boundary
-constexpr size_t   RPU_RECORD_BYTES           = 40; // ceil((4 + 270 + 40 + 6) / 8)
+constexpr size_t   RPU_RECORD_BYTES        = 38; // (4 + 260 + 40) / 8, no padding needed
 
 // ---------------------------------------------------------------------------
 // RPURecord
