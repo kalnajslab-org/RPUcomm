@@ -161,7 +161,7 @@ and incremented (mod 8) after every `tickMeasure()` push. Every tick, *all*
 ## Final bit layout / packet size
 
 Total payload: 4 (version) + 270 (fast fields) + 40 (one round-robin slot) +
-6 (trailing pad) = **320 bits = 40 bytes** (`RPU_RPT_BYTES`).
+6 (trailing pad) = **320 bits = 40 bytes** (`RPU_RECORD_BYTES`).
 
 | Constant | Bits | Used for |
 |---|---|---|

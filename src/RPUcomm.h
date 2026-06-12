@@ -221,7 +221,7 @@ constexpr uint8_t  RPU_RPT_SLOT_PAD_BITS   = 8;  // padding within the two-field
 constexpr size_t   RPU_RPT_SLOT_BITS       = 40; // fixed round-robin slot size
 
 constexpr uint8_t  RPU_RPT_PAD_BITS        = 6;  // trailing reserved padding to reach a byte boundary
-constexpr size_t   RPU_RPT_BYTES           = 40; // ceil((4 + 270 + 40 + 6) / 8)
+constexpr size_t   RPU_RECORD_BYTES           = 40; // ceil((4 + 270 + 40 + 6) / 8)
 
 // ---------------------------------------------------------------------------
 // RPURecord

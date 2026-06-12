@@ -305,10 +305,10 @@ void RPURecord::setHeaterStat(uint8_t status)  { heater_stat_ = (uint8_t)constra
 
 bool RPURecord::encode(uint8_t * buf, size_t buf_size) const
 {
-    if (buf_size < RPU_RPT_BYTES) return false;
+    if (buf_size < RPU_RECORD_BYTES) return false;
 
-    memset(buf, 0, RPU_RPT_BYTES);
-    etl::bit_stream_writer bsw(buf, RPU_RPT_BYTES, etl::endian::big);
+    memset(buf, 0, RPU_RECORD_BYTES);
+    etl::bit_stream_writer bsw(buf, RPU_RECORD_BYTES, etl::endian::big);
 
     bsw.write_unchecked<uint8_t> (RPU_RPT_VERSION, RPU_RPT_VER_BITS);
 
@@ -390,9 +390,9 @@ bool RPURecord::encode(uint8_t * buf, size_t buf_size) const
 
 bool RPURecord::decode(const uint8_t * buf, size_t buf_size)
 {
-    if (buf_size < RPU_RPT_BYTES) return false;
+    if (buf_size < RPU_RECORD_BYTES) return false;
 
-    etl::bit_stream_reader bsr(buf, RPU_RPT_BYTES, etl::endian::big);
+    etl::bit_stream_reader bsr(buf, RPU_RECORD_BYTES, etl::endian::big);
 
     bsr.read_unchecked<uint8_t>(RPU_RPT_VER_BITS);  // packet version, not stored
 
