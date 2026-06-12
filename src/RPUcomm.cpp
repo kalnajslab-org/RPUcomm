@@ -323,6 +323,7 @@ void RPUReport::setTdlasSpec1(float value)     { tdlas_spec_1_  = value; }
 void RPUReport::setTdlasSpec2(float value)     { tdlas_spec_2_  = value; }
 void RPUReport::setTdlasSpec3(float value)     { tdlas_spec_3_  = value; }
 void RPUReport::setTdlasSpec4(float value)     { tdlas_spec_4_  = value; }
+void RPUReport::setRs41Valid(bool valid)          { rs41_valid_ = valid; }
 void RPUReport::setRs41FrameCount(uint32_t count) { rs41_frame_count_ = count; }
 void RPUReport::setRs41AirT(float celsius)        { rs41_air_t_raw_        = (uint16_t)constrain((int)((celsius + 100.0f) * 10.0f), 0, 4095); }
 void RPUReport::setRs41Humidity(float percent)    { rs41_humidity_raw_     = (uint16_t)constrain((int)(percent * 10.0f), 0, 1023); }
@@ -334,12 +335,7 @@ void RPUReport::setRs41ModuleError(uint8_t error)   { rs41_module_error_   = err
 void RPUReport::setRs41PcbSupplyV(float volts)    { rs41_pcb_supply_v_raw_ = (uint16_t)constrain((int)(volts * 100.0f), 0, 4095); }
 void RPUReport::setRs41Lsm303T(float celsius)     { rs41_lsm303_t_raw_     = (uint16_t)constrain((int)((celsius + 100.0f) * 10.0f), 0, 4095); }
 void RPUReport::setRs41PcbHeaterOn(bool on)       { rs41_pcb_heater_on_    = on; }
-void RPUReport::setRs41MagHdgXY(int32_t degrees)  { rs41_mag_hdg_xy_       = (uint16_t)constrain((int)degrees, 0, 360); }
-void RPUReport::setRs41MagHdgXZ(int32_t degrees)  { rs41_mag_hdg_xz_       = (uint16_t)constrain((int)degrees, 0, 360); }
-void RPUReport::setRs41MagHdgYZ(int32_t degrees)  { rs41_mag_hdg_yz_       = (uint16_t)constrain((int)degrees, 0, 360); }
-void RPUReport::setRs41AccelX(int32_t milligee)   { rs41_accel_x_          = (int16_t)constrain((int)milligee, -32768, 32767); }
-void RPUReport::setRs41AccelY(int32_t milligee)   { rs41_accel_y_          = (int16_t)constrain((int)milligee, -32768, 32767); }
-void RPUReport::setRs41AccelZ(int32_t milligee)   { rs41_accel_z_          = (int16_t)constrain((int)milligee, -32768, 32767); }
+void RPUReport::setRs41MagXY(int32_t counts)      { rs41_mag_xy_           = (uint8_t)(((float)constrain(counts, -1000, 1000) + 1000.0f) / 2000.0f * 255.0f); }
 
 bool RPUReport::encode(uint8_t * buf, size_t buf_size) const
 {
@@ -404,6 +400,7 @@ bool RPUReport::encode(uint8_t * buf, size_t buf_size) const
     writeFloat32(bsw, tdlas_spec_3_);
     writeFloat32(bsw, tdlas_spec_4_);
 
+    bsw.write_unchecked(rs41_valid_);
     bsw.write_unchecked<uint32_t>(rs41_frame_count_,      RPU_RPT_TIME_BITS);
     bsw.write_unchecked<uint16_t>(rs41_air_t_raw_,        RPU_RPT_TEMP_BITS);
     bsw.write_unchecked<uint16_t>(rs41_humidity_raw_,     RPU_RPT_HUM_BITS);
@@ -415,12 +412,7 @@ bool RPUReport::encode(uint8_t * buf, size_t buf_size) const
     bsw.write_unchecked<uint16_t>(rs41_pcb_supply_v_raw_, RPU_RPT_VOLT_BITS);
     bsw.write_unchecked<uint16_t>(rs41_lsm303_t_raw_,     RPU_RPT_TEMP_BITS);
     bsw.write_unchecked(rs41_pcb_heater_on_);
-    bsw.write_unchecked<uint16_t>(rs41_mag_hdg_xy_,       RPU_RPT_HDG_BITS);
-    bsw.write_unchecked<uint16_t>(rs41_mag_hdg_xz_,       RPU_RPT_HDG_BITS);
-    bsw.write_unchecked<uint16_t>(rs41_mag_hdg_yz_,       RPU_RPT_HDG_BITS);
-    bsw.write_unchecked<int16_t> (rs41_accel_x_,          RPU_RPT_ACCEL_BITS);
-    bsw.write_unchecked<int16_t> (rs41_accel_y_,          RPU_RPT_ACCEL_BITS);
-    bsw.write_unchecked<int16_t> (rs41_accel_z_,          RPU_RPT_ACCEL_BITS);
+    bsw.write_unchecked<uint8_t> (rs41_mag_xy_,           RPU_RPT_MAGXY_BITS);
 
     return true;
 }
@@ -487,6 +479,7 @@ bool RPUReport::decode(const uint8_t * buf, size_t buf_size)
     tdlas_spec_3_  = readFloat32(bsr);
     tdlas_spec_4_  = readFloat32(bsr);
 
+    rs41_valid_            = bsr.read_unchecked<bool>();
     rs41_frame_count_      = bsr.read_unchecked<uint32_t>(RPU_RPT_TIME_BITS);
     rs41_air_t_raw_        = bsr.read_unchecked<uint16_t>(RPU_RPT_TEMP_BITS);
     rs41_humidity_raw_     = bsr.read_unchecked<uint16_t>(RPU_RPT_HUM_BITS);
@@ -498,19 +491,14 @@ bool RPUReport::decode(const uint8_t * buf, size_t buf_size)
     rs41_pcb_supply_v_raw_ = bsr.read_unchecked<uint16_t>(RPU_RPT_VOLT_BITS);
     rs41_lsm303_t_raw_     = bsr.read_unchecked<uint16_t>(RPU_RPT_TEMP_BITS);
     rs41_pcb_heater_on_    = bsr.read_unchecked<bool>();
-    rs41_mag_hdg_xy_       = bsr.read_unchecked<uint16_t>(RPU_RPT_HDG_BITS);
-    rs41_mag_hdg_xz_       = bsr.read_unchecked<uint16_t>(RPU_RPT_HDG_BITS);
-    rs41_mag_hdg_yz_       = bsr.read_unchecked<uint16_t>(RPU_RPT_HDG_BITS);
-    rs41_accel_x_          = bsr.read_unchecked<int16_t>(RPU_RPT_ACCEL_BITS);
-    rs41_accel_y_          = bsr.read_unchecked<int16_t>(RPU_RPT_ACCEL_BITS);
-    rs41_accel_z_          = bsr.read_unchecked<int16_t>(RPU_RPT_ACCEL_BITS);
+    rs41_mag_xy_           = bsr.read_unchecked<uint8_t> (RPU_RPT_MAGXY_BITS);
 
     return true;
 }
 
 String RPUReport::toJSON() const
 {
-    char buf[900];
+    char buf[1400];
     snprintf(buf, sizeof(buf),
         "{\"id\":\"%04X\",\"elapsed_ms\":%lu,"
         "\"bat_v\":%.2f,\"vin\":%.2f,\"charge_i\":%.3f,\"v5\":%.2f,"
@@ -526,12 +514,12 @@ String RPUReport::toJSON() const
         "\"tdlas_mr_avg\":%.4f,\"tdlas_bkg\":%.4f,\"tdlas_peak\":%.4f,\"tdlas_ratio\":%.6f,"
         "\"tdlas_batt\":%.3f,\"tdlas_therm_1\":%.2f,\"tdlas_therm_2\":%.2f,\"tdlas_indx\":%d,"
         "\"tdlas_spec_1\":%.4f,\"tdlas_spec_2\":%.4f,\"tdlas_spec_3\":%.4f,\"tdlas_spec_4\":%.4f,"
+        "\"rs41_valid\":%s,"
         "\"rs41_frame_count\":%lu,\"rs41_air_t\":%.1f,\"rs41_humidity\":%.1f,\"rs41_hsensor_t\":%.1f,"
         "\"rs41_pres\":%.2f,\"rs41_internal_t\":%.1f,"
         "\"rs41_module_status\":%u,\"rs41_module_error\":%u,"
         "\"rs41_pcb_supply_v\":%.2f,\"rs41_lsm303_t\":%.1f,\"rs41_pcb_heater_on\":%s,"
-        "\"rs41_mag_hdg_xy\":%ld,\"rs41_mag_hdg_xz\":%ld,\"rs41_mag_hdg_yz\":%ld,"
-        "\"rs41_accel_x\":%ld,\"rs41_accel_y\":%ld,\"rs41_accel_z\":%ld}",
+        "\"rs41_mag_xy\":%ld}",
         board_id_, (unsigned long)elapsed_ms_,
         getBatV(), getVin(), getChargeI(), getV5V(),
         getPumpI(), getOpcI(), getTsenI(), getTdlasI(), getHeaterI(),
@@ -546,12 +534,12 @@ String RPUReport::toJSON() const
         getTdlasMrAvg(), getTdlasBkg(), getTdlasPeak(), getTdlasRatio(),
         getTdlasBatt(), getTdlasTherm1(), getTdlasTherm2(), tdlas_indx_,
         getTdlasSpec1(), getTdlasSpec2(), getTdlasSpec3(), getTdlasSpec4(),
+        rs41_valid_ ? "true" : "false",
         (unsigned long)rs41_frame_count_, getRs41AirT(), getRs41Humidity(), getRs41HSensorT(),
         getRs41Pres(), getRs41InternalT(),
         rs41_module_status_, rs41_module_error_,
         getRs41PcbSupplyV(), getRs41Lsm303T(), rs41_pcb_heater_on_ ? "true" : "false",
-        (long)getRs41MagHdgXY(), (long)getRs41MagHdgXZ(), (long)getRs41MagHdgYZ(),
-        (long)getRs41AccelX(), (long)getRs41AccelY(), (long)getRs41AccelZ());
+        (long)getRs41MagXY());
 
     return String(buf);
 }

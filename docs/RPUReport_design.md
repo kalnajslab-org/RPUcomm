@@ -49,10 +49,9 @@ The field order matches the order values are gathered/assigned in
 8. TSEN: `tsen_airt`, `tsen_ptemp`, `tsen_pres` (raw, uncalibrated)
 9. TDLAS: `mr_avg`, `bkg`, `peak`, `ratio`, `batt`, `therm_1`, `therm_2`,
    `indx`, `spec_1`...`spec_4`
-10. RS41: `frame_count`, `air_temp`, `humidity`, `hsensor_temp`, `pres`,
+10. RS41: `valid`, `frame_count`, `air_temp`, `humidity`, `hsensor_temp`, `pres`,
     `internal_temp`, `module_status`, `module_error`, `pcb_supply_V`,
-    `lsm303_temp`, `pcb_heater_on`, magnetic headings (XY/XZ/YZ), accelerations
-    (X/Y/Z)
+    `lsm303_temp`, `pcb_heater_on`, magnetometer X-Y (`mag_xy`)
 
 The raw ASCII response string from the TSEN probe (`tsenData`, the
 `"#AAA PPPPPP TTTTTT\r"` line itself) is *not* included — it isn't part of the
@@ -236,6 +235,7 @@ one consistent API.
 
 | Field | Type | Encoding | Bits | Notes |
 |---|---|---|---|---|
+| `valid` | bool | 1-bit flag | 1 | `RS41SensorData_t::valid` — distinguishes "no/stale RS41 frame this tick" (all fields below zeroed) from a real reading whose raw fields happen to be zero |
 | `frame_count` | uint32 | raw | 32 | |
 | `air_temp_degC` | float °C | `(T+100) x10` | 12 | shares the board-temp scale above; `ECUReport_t` used `x100`/14 bits but that's overkill here |
 | `humdity_percent` | float % | `x10`, 0–102.3 % | 10 | matches `ECUReport_t` |
@@ -246,12 +246,15 @@ one consistent API.
 | `pcb_supply_V` | float V | shares the x100 V / 12-bit voltage scale | 12 | |
 | `lsm303_temp_degC` | float °C | `(T+100) x10` | 12 | |
 | `pcb_heater_on` | int (bool) | 1-bit flag | 1 | |
-| `mag_hdgXY/XZ/YZ_deg` | int32, 0–360° | raw degrees, 1° res | 9 each | 9 bits covers 0–511, comfortably holds 0–360 |
-| `accelX/Y/Z_mG` | int32 (mG) | signed int16, 1 mG res | 16 each | ±32767 mG (~±32.8 g) range, far exceeds any expected reading |
+| `mag_hdgXY_deg` (`mag_xy`) | int32, raw counts | clamp to ±1000, `(counts+1000)/2000 x255` | 8 | matches `ECUReport_t::rs41_magXY`. Despite the `RS41SensorData_t` field name/comment ("heading, 0-360°"), the RS41 reports a raw LSM303 magnetometer count that can be negative (observed values like -403); the previous 0-360° clamp silently zeroed all negative readings |
+
+`mag_hdgXZ_deg`/`mag_hdgYZ_deg` and `accelX/Y/Z_mG` were dropped from the
+report entirely as part of trimming `RPUReport`'s size — only the XY magnetic
+field reading is retained.
 
 ## Final bit layout / packet size
 
-Total payload: 4 (version header) + 1128 (fields) = **1132 bits = 142 bytes**
+Total payload: 4 (version header) + 1062 (fields) = **1066 bits = 134 bytes**
 (`RPU_RPT_BYTES`). All constants are named `RPU_RPT_*` in `RPUcomm.h` to keep
 them distinct from the `RPU_PKT_*` constants used by `RPUPacket`.
 
@@ -282,8 +285,7 @@ them distinct from the `RPU_PKT_*` constants used by `RPUPacket`.
 | `RPU_RPT_F32_BITS` | 32 | raw float32 (TDLAS) |
 | `RPU_RPT_INDX_BITS` | 8 | TDLAS spectrum index |
 | `RPU_RPT_STATUS_BITS` | 8 | RS41 module status/error |
-| `RPU_RPT_HDG_BITS` | 9 | RS41 magnetic heading, deg (0–360) |
-| `RPU_RPT_ACCEL_BITS` | 16 | RS41 acceleration, mG (signed) |
+| `RPU_RPT_MAGXY_BITS` | 8 | RS41 magnetometer X-Y, raw counts (-1000–1000), scaled to 0-255 |
 
 ## Open items / not yet done
 

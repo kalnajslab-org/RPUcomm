@@ -176,7 +176,7 @@ private:
 // ---------------------------------------------------------------------------
 // RPU report bit-field widths
 // Shared between RPU (encoder) and RATCHuTS (decoder).
-// Packet version 1 — 1132 bits = 142 bytes, big-endian.
+// Packet version 1 — 1066 bits = 134 bytes, big-endian.
 // Carries every field measured once per tickMeasure() iteration, in the same
 // order they are gathered. Sent in bulk over the docking connector (no LoRa
 // size limit), so most fields use a fixed-point scale rather than raw floats;
@@ -212,9 +212,8 @@ constexpr uint8_t  RPU_RPT_TSEN_PRES_BITS  = 24; // TSEN pressure, raw 24-bit co
 constexpr uint8_t  RPU_RPT_F32_BITS      = 32;   // raw IEEE-754 float (TDLAS)
 constexpr uint8_t  RPU_RPT_INDX_BITS     = 8;    // TDLAS spectrum index
 constexpr uint8_t  RPU_RPT_STATUS_BITS   = 8;    // RS41 module status/error
-constexpr uint8_t  RPU_RPT_HDG_BITS      = 9;    // RS41 magnetic heading, deg (0–360)
-constexpr uint8_t  RPU_RPT_ACCEL_BITS    = 16;   // RS41 acceleration, mG (signed)
-constexpr size_t   RPU_RPT_BYTES         = 142;  // ceil(1132 / 8)
+constexpr uint8_t  RPU_RPT_MAGXY_BITS    = 8;    // RS41 magnetometer X-Y, raw counts (-1000–1000), scaled to 0-255
+constexpr size_t   RPU_RPT_BYTES         = 134;  // ceil(1066 / 8)
 
 // ---------------------------------------------------------------------------
 // RPUReport
@@ -275,6 +274,7 @@ public:
     void setTdlasSpec2(float value);
     void setTdlasSpec3(float value);
     void setTdlasSpec4(float value);
+    void setRs41Valid(bool valid);
     void setRs41FrameCount(uint32_t count);
     void setRs41AirT(float celsius);
     void setRs41Humidity(float percent);
@@ -286,12 +286,7 @@ public:
     void setRs41PcbSupplyV(float volts);
     void setRs41Lsm303T(float celsius);
     void setRs41PcbHeaterOn(bool on);
-    void setRs41MagHdgXY(int32_t degrees);
-    void setRs41MagHdgXZ(int32_t degrees);
-    void setRs41MagHdgYZ(int32_t degrees);
-    void setRs41AccelX(int32_t milligee);
-    void setRs41AccelY(int32_t milligee);
-    void setRs41AccelZ(int32_t milligee);
+    void setRs41MagXY(int32_t counts);
 
     // Getters (packed encoding -> engineering units) ---------
     uint16_t getBoardId()          const { return board_id_; }
@@ -342,6 +337,7 @@ public:
     float    getTdlasSpec2()       const { return tdlas_spec_2_; }
     float    getTdlasSpec3()       const { return tdlas_spec_3_; }
     float    getTdlasSpec4()       const { return tdlas_spec_4_; }
+    bool     getRs41Valid()        const { return rs41_valid_; }
     uint32_t getRs41FrameCount()   const { return rs41_frame_count_; }
     float    getRs41AirT()         const { return (rs41_air_t_raw_ / 10.0f) - 100.0f; }
     float    getRs41Humidity()     const { return rs41_humidity_raw_ / 10.0f; }
@@ -353,12 +349,7 @@ public:
     float    getRs41PcbSupplyV()   const { return rs41_pcb_supply_v_raw_ / 100.0f; }
     float    getRs41Lsm303T()      const { return (rs41_lsm303_t_raw_ / 10.0f) - 100.0f; }
     bool     getRs41PcbHeaterOn()  const { return rs41_pcb_heater_on_; }
-    int32_t  getRs41MagHdgXY()     const { return rs41_mag_hdg_xy_; }
-    int32_t  getRs41MagHdgXZ()     const { return rs41_mag_hdg_xz_; }
-    int32_t  getRs41MagHdgYZ()     const { return rs41_mag_hdg_yz_; }
-    int32_t  getRs41AccelX()       const { return rs41_accel_x_; }
-    int32_t  getRs41AccelY()       const { return rs41_accel_y_; }
-    int32_t  getRs41AccelZ()       const { return rs41_accel_z_; }
+    int32_t  getRs41MagXY()        const { return (int32_t)((rs41_mag_xy_ / 255.0f) * 2000.0f - 1000.0f); }
 
     // Byte-level pack / unpack using the bit-field widths above
     bool encode(uint8_t* buf, size_t buf_size) const;
@@ -416,6 +407,7 @@ private:
     float    tdlas_spec_2_           = 0.0f;
     float    tdlas_spec_3_           = 0.0f;
     float    tdlas_spec_4_           = 0.0f;
+    bool     rs41_valid_             = false;
     uint32_t rs41_frame_count_       = 0;
     uint16_t rs41_air_t_raw_         = 0; // (T + 100) x10
     uint16_t rs41_humidity_raw_      = 0; // x10 %
@@ -427,12 +419,7 @@ private:
     uint16_t rs41_pcb_supply_v_raw_  = 0; // x100 V
     uint16_t rs41_lsm303_t_raw_      = 0; // (T + 100) x10
     bool     rs41_pcb_heater_on_     = false;
-    uint16_t rs41_mag_hdg_xy_        = 0; // deg, 0-360
-    uint16_t rs41_mag_hdg_xz_        = 0; // deg, 0-360
-    uint16_t rs41_mag_hdg_yz_        = 0; // deg, 0-360
-    int16_t  rs41_accel_x_           = 0; // mG
-    int16_t  rs41_accel_y_           = 0; // mG
-    int16_t  rs41_accel_z_           = 0; // mG
+    uint8_t  rs41_mag_xy_            = 0; // raw counts (-1000–1000), scaled to 0-255
 };
 
 #endif /* RPUComm_H */
