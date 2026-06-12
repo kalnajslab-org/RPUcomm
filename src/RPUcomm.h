@@ -176,180 +176,163 @@ private:
 // ---------------------------------------------------------------------------
 // RPU report bit-field widths
 // Shared between RPU (encoder) and RATCHuTS (decoder).
-// Packet version 1 — 1066 bits = 134 bytes, big-endian.
-// Carries every field measured once per tickMeasure() iteration, in the same
-// order they are gathered. Sent in bulk over the docking connector (no LoRa
-// size limit), so most fields use a fixed-point scale rather than raw floats;
-// the TDLAS spectroscopy values (whose ranges aren't well characterised) are
-// packed as raw IEEE-754 floats to avoid lossy guesses.
+// Packet version 1 — 314 bits + 6-bit pad = 320 bits = 40 bytes, big-endian.
 //
-// Many of the following bit widths are shared for multiple fields; 
-// for example, all the subsystem currents are 12 bits with the same scale factor
+// Matches the "Profiler TM Format 2026" spec: 5000 records/profile at 40
+// bytes each (~195 KiB). Each record carries 21 "fast" fields (period = 1,
+// present every record) plus one fixed-size 40-bit "slot" from a round-robin
+// rotation of 22 "slow" fields (period = 8 — each slow field is therefore
+// updated roughly once every 8 records). The round-robin index is itself one
+// of the fast fields, so a decoder always knows which slow fields are valid
+// in a given record's slot. The slot is a fixed RPU_RPT_SLOT_BITS regardless
+// of index, so the overall record length never varies.
 // ---------------------------------------------------------------------------
 constexpr uint8_t  RPU_RPT_VERSION       = 1;
 constexpr uint8_t  RPU_RPT_VER_BITS      = 4;    // packet format version
-constexpr uint8_t  RPU_RPT_ID_BITS       = 16;   // board ID
-constexpr uint8_t  RPU_RPT_TIME_BITS     = 32;   // elapsed_ms / ROPC_time / RS41 frame_count, raw
-constexpr uint8_t  RPU_RPT_VOLT_BITS     = 12;   // V x100   (0–40.95 V)
-constexpr uint8_t  RPU_RPT_CHGI_BITS     = 13;   // charge_i, mA  (0–8191 mA)
-constexpr uint8_t  RPU_RPT_CURR_BITS     = 12;   // subsystem I, mA (0–4095 mA)
-constexpr uint8_t  RPU_RPT_PWM_BITS      = 8;    // pump PWM (0–255)
-constexpr uint8_t  RPU_RPT_LAT_BITS      = 21;   // (lat + 90)  x10000
-constexpr uint8_t  RPU_RPT_LON_BITS      = 22;   // (lon + 180) x10000
-constexpr uint8_t  RPU_RPT_ALT_BITS      = 16;   // altitude, m
-constexpr uint8_t  RPU_RPT_SATS_BITS     = 5;    // satellite count
-constexpr uint8_t  RPU_RPT_GPS_DATE_BITS = 19;   // DDMMYY
-constexpr uint8_t  RPU_RPT_GPS_TIME_BITS = 25;   // HHMMSSCC
-constexpr uint8_t  RPU_RPT_GPS_AGE_BITS  = 8;    // GPS fix age, s, clamped (0–255 s)
-constexpr uint8_t  RPU_RPT_TEMP_BITS     = 12;   // (T + 100) x10  (-100.0 to 309.5 °C, 0.1 °C res)
-constexpr uint8_t  RPU_RPT_HUM_BITS      = 10;   // RH x10   (0–102.3 %)
-constexpr uint8_t  RPU_RPT_PRES_BITS     = 17;   // pressure x100 (0–1310.71 mb)
-constexpr uint8_t  RPU_RPT_OPC_BITS      = 16;   // OPC bin counts, raw
-constexpr uint8_t  RPU_RPT_ALARM_BITS    = 8;    // OPC alarm flags
-constexpr uint8_t  RPU_RPT_TSEN_AIRT_BITS  = 12; // TSEN air temp, raw 12-bit A/D count (0–0xFFF)
-constexpr uint8_t  RPU_RPT_TSEN_PTEMP_BITS = 24; // TSEN pressure-sensor temp, raw 24-bit count
-constexpr uint8_t  RPU_RPT_TSEN_PRES_BITS  = 24; // TSEN pressure, raw 24-bit count
-constexpr uint8_t  RPU_RPT_F32_BITS      = 32;   // raw IEEE-754 float (TDLAS)
-constexpr uint8_t  RPU_RPT_INDX_BITS     = 8;    // TDLAS spectrum index
-constexpr uint8_t  RPU_RPT_STATUS_BITS   = 8;    // RS41 module status/error
-constexpr uint8_t  RPU_RPT_MAGXY_BITS    = 8;    // RS41 magnetometer X-Y, raw counts (-1000–1000), scaled to 0-255
-constexpr size_t   RPU_RPT_BYTES         = 134;  // ceil(1066 / 8)
+
+// --- Fast fields (period = 1, present in every record) ---------------------
+constexpr uint8_t  RPU_RPT_RR_IDX_BITS     = 4;  // round-robin slot index (0–7)
+constexpr uint8_t  RPU_RPT_ELAPSED_BITS    = 16; // elapsed seconds since GPSStartTime (0–65535 s)
+constexpr uint8_t  RPU_RPT_ALT_BITS        = 16; // altitude, m, raw
+constexpr uint8_t  RPU_RPT_GPS_DELTA_BITS  = 16; // (lat|lon - start) x50000, signed
+constexpr uint8_t  RPU_RPT_SATS_BITS       = 4;  // satellite count (0–15)
+constexpr uint8_t  RPU_RPT_GPS_AGE_BITS    = 4;  // GPS fix age, s, clamped (0–15 s)
+constexpr uint8_t  RPU_RPT_OPC_BITS        = 16; // OPC bin counts, raw
+constexpr uint8_t  RPU_RPT_TSEN_BITS       = 16; // TSEN raw counts (airt: 0–4095; pres/ptemp: top 16 bits of 24-bit count)
+constexpr uint8_t  RPU_RPT_RS41_T_BITS     = 16; // (T + 100) x100  (-100.00 to 555.35 °C)
+constexpr uint8_t  RPU_RPT_RS41_P_BITS     = 16; // pressure x10    (0–6553.5 mb)
+constexpr uint8_t  RPU_RPT_RS41_RH_BITS    = 16; // RH x100         (0–655.35 %)
+constexpr uint8_t  RPU_RPT_TDLAS_VMR_BITS  = 10; // TDLAS VMR_ave x10, provisional (0–102.3)
+constexpr uint8_t  RPU_RPT_RESERVED_BITS   = 10; // reserved (spec: TDLAS VMR_min — not available from current TDLAS firmware)
+constexpr uint8_t  RPU_RPT_TDLAS_BKG_BITS  = 12; // TDLAS bkg x100, provisional (0–40.95)
+constexpr uint8_t  RPU_RPT_TDLAS_PEAK_BITS = 8;  // TDLAS peak x10, provisional (0–25.5)
+constexpr uint8_t  RPU_RPT_TDLAS_RATIO_BITS= 10; // TDLAS ratio x1000, provisional (0–1.023)
+
+// --- Round-robin slow fields (period = 8; one fixed-size slot per record) --
+constexpr uint8_t  RPU_RPT_MAGXY_BITS      = 16; // RS41 magnetometer X-Y, counts + 1000
+constexpr uint8_t  RPU_RPT_BEMF_BITS       = 16; // pump BEMF, V x1000
+constexpr uint8_t  RPU_RPT_SPEC_BITS       = 16; // TDLAS spectra, raw passthrough, provisional
+constexpr uint8_t  RPU_RPT_HKCURR_BITS     = 8;  // subsystem currents, mA/4 (0–1020 mA, 4 mA res)
+constexpr uint8_t  RPU_RPT_V5V_BITS        = 8;  // V x50  (0–5.10 V, 0.02 V res)
+constexpr uint8_t  RPU_RPT_HKTEMP_BITS     = 8;  // (T + 100), 1 °C res (-100 to 155 °C)
+constexpr uint8_t  RPU_RPT_VOLT_BITS       = 12; // battery voltage x100 (0–40.95 V)
+constexpr uint8_t  RPU_RPT_HEATER_BITS     = 4;  // heater status (bit0: battery heater on)
+constexpr uint8_t  RPU_RPT_SLOT_PAD_BITS   = 8;  // padding within the two-field 40-bit slots (indices 0-5)
+constexpr size_t   RPU_RPT_SLOT_BITS       = 40; // fixed round-robin slot size
+
+constexpr uint8_t  RPU_RPT_PAD_BITS        = 6;  // trailing reserved padding to reach a byte boundary
+constexpr size_t   RPU_RPT_BYTES           = 40; // ceil((4 + 270 + 40 + 6) / 8)
 
 // ---------------------------------------------------------------------------
-// RPUReport
-// Holds one tickMeasure() sample (power, GPS, temperatures, OPC, TDLAS, RS41)
-// and converts to/from the bit-packed wire format. Field order matches the
-// order the values are gathered in tickMeasure().
+// RPURecord
+// Holds one tickMeasure() sample (GPS, OPC, TSEN, RS41, TDLAS, housekeeping)
+// and converts to/from the bit-packed wire format (RPU_RPT_VERSION 1).
+//
+// Fast fields (period = 1) are present in every record. Slow fields
+// (period = 8) are set on every tick, but encode() only serialises the one
+// 40-bit slot selected by setRoundRobinIdx(); callers are expected to cycle
+// the round-robin index 0..7 across successive records so that all 22 slow
+// fields are eventually transmitted.
 // ---------------------------------------------------------------------------
-class RPUReport {
+class RPURecord {
 public:
-    RPUReport() = default;
+    RPURecord() = default;
 
     // Setters (engineering units -> packed encoding) ---------
-    void setBoardId(uint16_t id);
-    void setElapsedMs(uint32_t ms);
-    void setBatV(float volts);
-    void setVin(float volts);
-    void setChargeI(float amps);
-    void setV5V(float volts);
-    void setPumpI(float milliamps);
-    void setOpcI(float milliamps);
-    void setTsenI(float milliamps);
-    void setTdlasI(float milliamps);
-    void setHeaterI(float milliamps);
-    void setBemfV(float volts);
-    void setPumpPwm(uint8_t pwm);
-    void setLat(double degrees);
-    void setLon(double degrees);
+
+    // Fast fields (period = 1)
+    void setElapsedS(uint32_t seconds);
     void setAlt(float meters);
+    void setLatDelta(double degrees);
+    void setLonDelta(double degrees);
     void setSats(uint8_t count);
-    void setGpsDate(uint32_t date);   // DDMMYY, as returned by TinyGPSDate::value()
-    void setGpsTime(uint32_t time);   // HHMMSSCC, as returned by TinyGPSTime::value()
     void setGpsAge(uint32_t seconds);
-    void setPcbT(float celsius);
-    void setPumpT(float celsius);
-    void setBatT(float celsius);
-    void setOpcTime(uint32_t ms);
     void setOpcD300(uint16_t count);
-    void setOpcD500(uint16_t count);
-    void setOpcD700(uint16_t count);
-    void setOpcD1000(uint16_t count);
     void setOpcD2000(uint16_t count);
-    void setOpcD2500(uint16_t count);
-    void setOpcD3000(uint16_t count);
-    void setOpcD5000(uint16_t count);
-    void setOpcAlarm(uint8_t alarm);
     void setTsenAirt(uint16_t raw);
-    void setTsenPtemp(uint32_t raw);
     void setTsenPres(uint32_t raw);
+    void setTsenPtemp(uint32_t raw);
+    void setRs41AirT(float celsius);
+    void setRs41Pres(float millibar);
+    void setRs41Humidity(float percent);
+    void setRs41HSensorT(float celsius);
     void setTdlasMrAvg(float value);
     void setTdlasBkg(float value);
     void setTdlasPeak(float value);
     void setTdlasRatio(float value);
-    void setTdlasBatt(float volts);
-    void setTdlasTherm1(float celsius);
-    void setTdlasTherm2(float celsius);
-    void setTdlasIndx(int8_t indx);
+    void setRoundRobinIdx(uint8_t idx);
+
+    // Slow / round-robin fields (period = 8)
+    void setOpcD500(uint16_t count);
+    void setOpcD700(uint16_t count);
+    void setOpcD1000(uint16_t count);
+    void setOpcD3000(uint16_t count);
+    void setOpcD5000(uint16_t count);
+    void setOpcD2500(uint16_t count);   // spec "10000nm" slot; ROPCData has no 10000nm channel
+    void setRs41MagXY(int32_t counts);
+    void setBemfV(float volts);
     void setTdlasSpec1(float value);
     void setTdlasSpec2(float value);
     void setTdlasSpec3(float value);
     void setTdlasSpec4(float value);
-    void setRs41Valid(bool valid);
-    void setRs41FrameCount(uint32_t count);
-    void setRs41AirT(float celsius);
-    void setRs41Humidity(float percent);
-    void setRs41HSensorT(float celsius);
-    void setRs41Pres(float millibar);
-    void setRs41InternalT(float celsius);
-    void setRs41ModuleStatus(uint8_t status);
-    void setRs41ModuleError(uint8_t error);
-    void setRs41PcbSupplyV(float volts);
-    void setRs41Lsm303T(float celsius);
-    void setRs41PcbHeaterOn(bool on);
-    void setRs41MagXY(int32_t counts);
+    void setTsenI(float milliamps);
+    void setOpcI(float milliamps);
+    void setPumpI(float milliamps);
+    void setTdlasI(float milliamps);
+    void setV5V(float volts);
+    void setBatT(float celsius);
+    void setPumpT(float celsius);
+    void setPcbT(float celsius);
+    void setBatV(float volts);
+    void setHeaterStat(uint8_t status);
 
     // Getters (packed encoding -> engineering units) ---------
-    uint16_t getBoardId()          const { return board_id_; }
-    uint32_t getElapsedMs()        const { return elapsed_ms_; }
-    float    getBatV()             const { return bat_v_raw_ / 100.0f; }
-    float    getVin()              const { return vin_raw_ / 100.0f; }
-    float    getChargeI()          const { return charge_i_raw_ / 1000.0f; }
-    float    getV5V()              const { return v5v_raw_ / 100.0f; }
-    float    getPumpI()            const { return (float)pump_i_raw_; }
-    float    getOpcI()             const { return (float)opc_i_raw_; }
-    float    getTsenI()            const { return (float)tsen_i_raw_; }
-    float    getTdlasI()           const { return (float)tdlas_i_raw_; }
-    float    getHeaterI()          const { return (float)heater_i_raw_; }
-    float    getBemfV()            const { return bemf_v_raw_ / 100.0f; }
-    uint8_t  getPumpPwm()          const { return pump_pwm_; }
-    double   getLat()              const { return (lat_raw_ / 10000.0) - 90.0; }
-    double   getLon()              const { return (lon_raw_ / 10000.0) - 180.0; }
-    float    getAlt()              const { return (float)alt_raw_; }
-    uint8_t  getSats()              const { return sats_; }
-    uint32_t getGpsDate()          const { return gps_date_; }
-    uint32_t getGpsTime()          const { return gps_time_; }
-    uint32_t getGpsAge()           const { return gps_age_s_; }
-    float    getPcbT()             const { return (pcb_t_raw_ / 10.0f) - 100.0f; }
-    float    getPumpT()            const { return (pump_t_raw_ / 10.0f) - 100.0f; }
-    float    getBatT()             const { return (bat_t_raw_ / 10.0f) - 100.0f; }
-    uint32_t getOpcTime()          const { return opc_time_; }
-    uint16_t getOpcD300()          const { return opc_d300_; }
-    uint16_t getOpcD500()          const { return opc_d500_; }
-    uint16_t getOpcD700()          const { return opc_d700_; }
-    uint16_t getOpcD1000()         const { return opc_d1000_; }
-    uint16_t getOpcD2000()         const { return opc_d2000_; }
-    uint16_t getOpcD2500()         const { return opc_d2500_; }
-    uint16_t getOpcD3000()         const { return opc_d3000_; }
-    uint16_t getOpcD5000()         const { return opc_d5000_; }
-    uint8_t  getOpcAlarm()         const { return opc_alarm_; }
-    uint16_t getTsenAirt()         const { return tsen_airt_raw_; }
-    uint32_t getTsenPtemp()        const { return tsen_ptemp_raw_; }
-    uint32_t getTsenPres()         const { return tsen_pres_raw_; }
-    float    getTdlasMrAvg()       const { return tdlas_mr_avg_; }
-    float    getTdlasBkg()         const { return tdlas_bkg_; }
-    float    getTdlasPeak()        const { return tdlas_peak_; }
-    float    getTdlasRatio()       const { return tdlas_ratio_; }
-    float    getTdlasBatt()        const { return tdlas_batt_; }
-    float    getTdlasTherm1()      const { return tdlas_therm_1_; }
-    float    getTdlasTherm2()      const { return tdlas_therm_2_; }
-    int8_t   getTdlasIndx()        const { return tdlas_indx_; }
-    float    getTdlasSpec1()       const { return tdlas_spec_1_; }
-    float    getTdlasSpec2()       const { return tdlas_spec_2_; }
-    float    getTdlasSpec3()       const { return tdlas_spec_3_; }
-    float    getTdlasSpec4()       const { return tdlas_spec_4_; }
-    bool     getRs41Valid()        const { return rs41_valid_; }
-    uint32_t getRs41FrameCount()   const { return rs41_frame_count_; }
-    float    getRs41AirT()         const { return (rs41_air_t_raw_ / 10.0f) - 100.0f; }
-    float    getRs41Humidity()     const { return rs41_humidity_raw_ / 10.0f; }
-    float    getRs41HSensorT()     const { return (rs41_hsensor_t_raw_ / 10.0f) - 100.0f; }
-    float    getRs41Pres()         const { return rs41_pres_raw_ / 100.0f; }
-    float    getRs41InternalT()    const { return (rs41_internal_t_raw_ / 10.0f) - 100.0f; }
-    uint8_t  getRs41ModuleStatus() const { return rs41_module_status_; }
-    uint8_t  getRs41ModuleError()  const { return rs41_module_error_; }
-    float    getRs41PcbSupplyV()   const { return rs41_pcb_supply_v_raw_ / 100.0f; }
-    float    getRs41Lsm303T()      const { return (rs41_lsm303_t_raw_ / 10.0f) - 100.0f; }
-    bool     getRs41PcbHeaterOn()  const { return rs41_pcb_heater_on_; }
-    int32_t  getRs41MagXY()        const { return (int32_t)((rs41_mag_xy_ / 255.0f) * 2000.0f - 1000.0f); }
+
+    // Fast fields
+    uint32_t getElapsedS()     const { return elapsed_s_; }
+    float    getAlt()          const { return (float)alt_raw_; }
+    double   getLatDelta()     const { return lat_delta_raw_ / 50000.0; }
+    double   getLonDelta()     const { return lon_delta_raw_ / 50000.0; }
+    uint8_t  getSats()          const { return sats_; }
+    uint32_t getGpsAge()       const { return gps_age_s_; }
+    uint16_t getOpcD300()      const { return opc_d300_; }
+    uint16_t getOpcD2000()     const { return opc_d2000_; }
+    uint16_t getTsenAirt()     const { return tsen_airt_raw_; }
+    uint16_t getTsenPres()     const { return tsen_pres_raw_; }
+    uint16_t getTsenPtemp()    const { return tsen_ptemp_raw_; }
+    float    getRs41AirT()     const { return (rs41_air_t_raw_ / 100.0f) - 100.0f; }
+    float    getRs41Pres()     const { return rs41_pres_raw_ / 10.0f; }
+    float    getRs41Humidity() const { return rs41_humidity_raw_ / 100.0f; }
+    float    getRs41HSensorT() const { return (rs41_hsensor_t_raw_ / 100.0f) - 100.0f; }
+    float    getTdlasMrAvg()   const { return tdlas_mr_avg_raw_ / 10.0f; }
+    float    getTdlasBkg()     const { return tdlas_bkg_raw_ / 100.0f; }
+    float    getTdlasPeak()    const { return tdlas_peak_raw_ / 10.0f; }
+    float    getTdlasRatio()   const { return tdlas_ratio_raw_ / 1000.0f; }
+    uint8_t  getRoundRobinIdx() const { return round_robin_idx_; }
+
+    // Slow / round-robin fields
+    uint16_t getOpcD500()      const { return opc_d500_; }
+    uint16_t getOpcD700()      const { return opc_d700_; }
+    uint16_t getOpcD1000()     const { return opc_d1000_; }
+    uint16_t getOpcD3000()     const { return opc_d3000_; }
+    uint16_t getOpcD5000()     const { return opc_d5000_; }
+    uint16_t getOpcD2500()     const { return opc_d2500_; }
+    int32_t  getRs41MagXY()    const { return (int32_t)rs41_mag_xy_raw_ - 1000; }
+    float    getBemfV()        const { return bemf_v_raw_ / 1000.0f; }
+    float    getTdlasSpec1()   const { return (float)tdlas_spec_1_raw_; }
+    float    getTdlasSpec2()   const { return (float)tdlas_spec_2_raw_; }
+    float    getTdlasSpec3()   const { return (float)tdlas_spec_3_raw_; }
+    float    getTdlasSpec4()   const { return (float)tdlas_spec_4_raw_; }
+    float    getTsenI()        const { return tsen_i_raw_ * 4.0f; }
+    float    getOpcI()         const { return opc_i_raw_ * 4.0f; }
+    float    getPumpI()        const { return pump_i_raw_ * 4.0f; }
+    float    getTdlasI()       const { return tdlas_i_raw_ * 4.0f; }
+    float    getV5V()          const { return v5v_raw_ / 50.0f; }
+    float    getBatT()         const { return (float)bat_t_raw_ - 100.0f; }
+    float    getPumpT()        const { return (float)pump_t_raw_ - 100.0f; }
+    float    getPcbT()         const { return (float)pcb_t_raw_ - 100.0f; }
+    float    getBatV()         const { return bat_v_raw_ / 100.0f; }
+    uint8_t  getHeaterStat()   const { return heater_stat_; }
 
     // Byte-level pack / unpack using the bit-field widths above
     bool encode(uint8_t* buf, size_t buf_size) const;
@@ -359,67 +342,51 @@ public:
     String toJSON() const;
 
 private:
-    uint16_t board_id_              = 0;
-    uint32_t elapsed_ms_            = 0;
-    uint16_t bat_v_raw_             = 0; // x100 V
-    uint16_t vin_raw_               = 0; // x100 V
-    uint16_t charge_i_raw_          = 0; // mA
-    uint16_t v5v_raw_               = 0; // x100 V
-    uint16_t pump_i_raw_            = 0; // mA
-    uint16_t opc_i_raw_             = 0; // mA
-    uint16_t tsen_i_raw_            = 0; // mA
-    uint16_t tdlas_i_raw_           = 0; // mA
-    uint16_t heater_i_raw_          = 0; // mA
-    uint16_t bemf_v_raw_            = 0; // x100 V
-    uint8_t  pump_pwm_              = 0;
-    uint32_t lat_raw_               = 0; // (lat + 90)  x10000
-    uint32_t lon_raw_               = 0; // (lon + 180) x10000
-    uint16_t alt_raw_               = 0; // m
-    uint8_t  sats_                  = 0;
-    uint32_t gps_date_              = 0; // DDMMYY
-    uint32_t gps_time_              = 0; // HHMMSSCC
-    uint32_t gps_age_s_             = 0;
-    uint16_t pcb_t_raw_             = 0; // (T + 100) x10
-    uint16_t pump_t_raw_            = 0; // (T + 100) x10
-    uint16_t bat_t_raw_             = 0; // (T + 100) x10
-    uint32_t opc_time_              = 0;
-    uint16_t opc_d300_               = 0;
-    uint16_t opc_d500_               = 0;
-    uint16_t opc_d700_               = 0;
-    uint16_t opc_d1000_              = 0;
-    uint16_t opc_d2000_              = 0;
-    uint16_t opc_d2500_              = 0;
-    uint16_t opc_d3000_              = 0;
-    uint16_t opc_d5000_              = 0;
-    uint8_t  opc_alarm_              = 0;
-    uint16_t tsen_airt_raw_          = 0; // raw 12-bit A/D count
-    uint32_t tsen_ptemp_raw_         = 0; // raw 24-bit count
-    uint32_t tsen_pres_raw_          = 0; // raw 24-bit count
-    float    tdlas_mr_avg_           = 0.0f;
-    float    tdlas_bkg_              = 0.0f;
-    float    tdlas_peak_             = 0.0f;
-    float    tdlas_ratio_            = 0.0f;
-    float    tdlas_batt_             = 0.0f;
-    float    tdlas_therm_1_          = 0.0f;
-    float    tdlas_therm_2_          = 0.0f;
-    int8_t   tdlas_indx_             = 0;
-    float    tdlas_spec_1_           = 0.0f;
-    float    tdlas_spec_2_           = 0.0f;
-    float    tdlas_spec_3_           = 0.0f;
-    float    tdlas_spec_4_           = 0.0f;
-    bool     rs41_valid_             = false;
-    uint32_t rs41_frame_count_       = 0;
-    uint16_t rs41_air_t_raw_         = 0; // (T + 100) x10
-    uint16_t rs41_humidity_raw_      = 0; // x10 %
-    uint16_t rs41_hsensor_t_raw_     = 0; // (T + 100) x10
-    uint32_t rs41_pres_raw_          = 0; // x100 mb
-    uint16_t rs41_internal_t_raw_    = 0; // (T + 100) x10
-    uint8_t  rs41_module_status_     = 0;
-    uint8_t  rs41_module_error_      = 0;
-    uint16_t rs41_pcb_supply_v_raw_  = 0; // x100 V
-    uint16_t rs41_lsm303_t_raw_      = 0; // (T + 100) x10
-    bool     rs41_pcb_heater_on_     = false;
-    uint8_t  rs41_mag_xy_            = 0; // raw counts (-1000–1000), scaled to 0-255
+    // Fast fields (period = 1)
+    uint16_t elapsed_s_          = 0; // s since GPSStartTime
+    uint16_t alt_raw_            = 0; // m
+    int16_t  lat_delta_raw_      = 0; // (lat - GPSStartLat) x50000
+    int16_t  lon_delta_raw_      = 0; // (lon - GPSStartLon) x50000
+    uint8_t  sats_               = 0; // 0-15
+    uint8_t  gps_age_s_          = 0; // 0-15 s
+    uint16_t opc_d300_           = 0;
+    uint16_t opc_d2000_          = 0;
+    uint16_t tsen_airt_raw_      = 0; // raw 12-bit A/D count
+    uint16_t tsen_pres_raw_      = 0; // top 16 bits of raw 24-bit count
+    uint16_t tsen_ptemp_raw_     = 0; // top 16 bits of raw 24-bit count
+    uint16_t rs41_air_t_raw_     = 0; // (T + 100) x100
+    uint16_t rs41_pres_raw_      = 0; // x10 mb
+    uint16_t rs41_humidity_raw_  = 0; // x100 %
+    uint16_t rs41_hsensor_t_raw_ = 0; // (T + 100) x100
+    uint16_t tdlas_mr_avg_raw_   = 0; // x10, provisional (0-102.3)
+    uint16_t tdlas_bkg_raw_      = 0; // x100, provisional (0-40.95)
+    uint8_t  tdlas_peak_raw_     = 0; // x10, provisional (0-25.5)
+    uint16_t tdlas_ratio_raw_    = 0; // x1000, provisional (0-1.023)
+    uint8_t  round_robin_idx_    = 0; // 0-7
+
+    // Slow / round-robin fields (period = 8)
+    uint16_t opc_d500_           = 0;
+    uint16_t opc_d700_           = 0;
+    uint16_t opc_d1000_          = 0;
+    uint16_t opc_d3000_          = 0;
+    uint16_t opc_d5000_          = 0;
+    uint16_t opc_d2500_          = 0; // spec "10000nm" slot
+    uint16_t rs41_mag_xy_raw_    = 0; // counts + 1000
+    uint16_t bemf_v_raw_         = 0; // x1000 V
+    uint16_t tdlas_spec_1_raw_   = 0; // raw passthrough, provisional
+    uint16_t tdlas_spec_2_raw_   = 0;
+    uint16_t tdlas_spec_3_raw_   = 0;
+    uint16_t tdlas_spec_4_raw_   = 0;
+    uint8_t  tsen_i_raw_         = 0; // mA / 4
+    uint8_t  opc_i_raw_          = 0; // mA / 4
+    uint8_t  pump_i_raw_         = 0; // mA / 4
+    uint8_t  tdlas_i_raw_        = 0; // mA / 4
+    uint8_t  v5v_raw_            = 0; // V x50
+    uint8_t  bat_t_raw_          = 0; // T + 100
+    uint8_t  pump_t_raw_         = 0; // T + 100
+    uint8_t  pcb_t_raw_          = 0; // T + 100
+    uint16_t bat_v_raw_          = 0; // V x100, 12 bits
+    uint8_t  heater_stat_        = 0; // 4 bits
 };
 
 #endif /* RPUComm_H */
