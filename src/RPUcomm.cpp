@@ -126,6 +126,7 @@ bool RPUComm::RX_Error(char * error, uint8_t buffer_size)
 void RPUPacket::setBoardId(uint16_t id)        { board_id_    = id; }
 void RPUPacket::setState(uint8_t state)        { state_       = state; }
 void RPUPacket::setWdtCount(uint8_t count)     { wdt_count_   = count; }
+void RPUPacket::setBufferedRecords(uint8_t count) { buffered_records_ = count; }
 void RPUPacket::setVin(float volts)            { vin_raw_     = (uint8_t)constrain((int)(volts * 10.0f), 0, 255); }
 void RPUPacket::setV5V(float volts)            { v5v_raw_     = (uint8_t)constrain((int)(volts * 10.0f), 0, 255); }
 void RPUPacket::setBatV(float volts)           { bat_v_raw_   = (uint8_t)constrain((int)(volts * 10.0f), 0, 255); }
@@ -164,6 +165,7 @@ bool RPUPacket::encode(uint8_t * buf, size_t buf_size) const
     bsw.write_unchecked<uint16_t>(board_id_,        RPU_PKT_ID_BITS);
     bsw.write_unchecked<uint8_t> (state_,           RPU_PKT_STATE_BITS);
     bsw.write_unchecked<uint8_t> (wdt_count_,       RPU_PKT_WDT_BITS);
+    bsw.write_unchecked<uint8_t> (buffered_records_, RPU_PKT_BUFREC_BITS);
     bsw.write_unchecked<uint8_t> (vin_raw_,         RPU_PKT_VIN_BITS);
     bsw.write_unchecked<uint8_t> (v5v_raw_,         RPU_PKT_V5_BITS);
     bsw.write_unchecked<uint8_t> (bat_v_raw_,       RPU_PKT_BATV_BITS);
@@ -201,6 +203,7 @@ bool RPUPacket::decode(const uint8_t * buf, size_t buf_size)
     board_id_     = bsr.read_unchecked<uint16_t>(RPU_PKT_ID_BITS);
     state_        = bsr.read_unchecked<uint8_t> (RPU_PKT_STATE_BITS);
     wdt_count_    = bsr.read_unchecked<uint8_t> (RPU_PKT_WDT_BITS);
+    buffered_records_ = bsr.read_unchecked<uint8_t> (RPU_PKT_BUFREC_BITS);
     vin_raw_      = bsr.read_unchecked<uint8_t> (RPU_PKT_VIN_BITS);
     v5v_raw_      = bsr.read_unchecked<uint8_t> (RPU_PKT_V5_BITS);
     bat_v_raw_    = bsr.read_unchecked<uint8_t> (RPU_PKT_BATV_BITS);
@@ -237,13 +240,13 @@ String RPUPacket::toJSON() const
 
     char buf[350];
     snprintf(buf, sizeof(buf),
-        "{\"id\":\"%04X\",\"ver\":\"%s\",\"state\":\"%s\",\"wdt_n\":%u,"
+        "{\"id\":\"%04X\",\"ver\":\"%s\",\"state\":\"%s\",\"wdt_n\":%u,\"buf_rec\":%u,"
         "\"vin\":%.1f,\"v5\":%.1f,\"bat_v\":%.1f,\"bat_duty\":%u,\"chg_i\":%.1f,"
         "\"bat_t\":%.1f,\"pcb_t\":%.1f,"
         "\"pump_i\":%.0f,\"opc_i\":%.0f,\"tsen_i\":%.0f,\"tdlas_i\":%.0f,\"heater_i\":%.0f,"
         "\"lat\":%.6f,\"lon\":%.6f,\"alt\":%.1f,\"sats\":%u,"
         "\"date\":%lu,\"time\":%lu}",
-        board_id_, ver_, state_str, wdt_count_,
+        board_id_, ver_, state_str, wdt_count_, buffered_records_,
         getVin(), getV5V(), getBatV(), heater_duty_, getChgI(),
         getBatT(), getPcbT(),
         getPumpI(), getOpcI(), getTsenI(), getTdlasI(), getHeaterI(),

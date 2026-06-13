@@ -58,13 +58,14 @@ public:
 // ---------------------------------------------------------------------------
 // RPU status packet bit-field widths
 // Shared between RPU (encoder) and RATCHuTS (decoder).
-// Packet version 1 — 320 bits = 40 bytes, big-endian (max packet size 250 bytes)
+// Packet version 1 — 328 bits = 41 bytes, big-endian (max packet size 250 bytes)
 // ---------------------------------------------------------------------------
 constexpr uint8_t  RPU_PKT_VERSION      = 1;
 constexpr uint8_t  RPU_PKT_VER_BITS     = 4;   // packet format version
 constexpr uint8_t  RPU_PKT_ID_BITS      = 16;  // board ID
 constexpr uint8_t  RPU_PKT_STATE_BITS   = 4;   // RPUState enum
 constexpr uint8_t  RPU_PKT_WDT_BITS     = 8;   // watchdog reset count
+constexpr uint8_t  RPU_PKT_BUFREC_BITS  = 8;   // records buffered awaiting offload (0–255)
 constexpr uint8_t  RPU_PKT_VIN_BITS     = 8;   // V_IN   × 0.1 V  (0–25.5 V)
 constexpr uint8_t  RPU_PKT_V5_BITS      = 8;   // v_5V   × 0.1 V  (0–25.5 V)
 constexpr uint8_t  RPU_PKT_BATV_BITS    = 8;   // bat_v  × 0.1 V  (0–25.5 V)
@@ -80,7 +81,7 @@ constexpr uint8_t  RPU_PKT_GPS_DATE_BITS = 19; // GPS date, DDMMYY (Year is 20YY
 constexpr uint8_t  RPU_PKT_GPS_TIME_BITS = 25; // GPS time, HHMMSSCC (seconds in 100ths) — same encoding as ECUComm
 constexpr size_t   RPU_PKT_FW_VER_LEN   = 8;   // firmware-version string, fixed-length, NUL-padded
 constexpr size_t   RPU_PKT_FW_VER_BITS  = RPU_PKT_FW_VER_LEN * 8;
-constexpr size_t   RPU_PKT_BYTES        = 40;  // ceil(320 / 8); must be <= 250
+constexpr size_t   RPU_PKT_BYTES        = 41;  // ceil(328 / 8); must be <= 250
 
 // ---------------------------------------------------------------------------
 // RPUPacket
@@ -97,6 +98,7 @@ public:
     void setBoardId(uint16_t id);
     void setState(uint8_t state);
     void setWdtCount(uint8_t count);
+    void setBufferedRecords(uint8_t count);
     void setVin(float volts);
     void setV5V(float volts);
     void setBatV(float volts);
@@ -121,6 +123,7 @@ public:
     uint16_t getBoardId()    const { return board_id_; }
     uint8_t  getState()      const { return state_; }
     uint8_t  getWdtCount()   const { return wdt_count_; }
+    uint8_t  getBufferedRecords() const { return buffered_records_; }
     float    getVin()        const { return vin_raw_ / 10.0f; }
     float    getV5V()        const { return v5v_raw_ / 10.0f; }
     float    getBatV()       const { return bat_v_raw_ / 10.0f; }
@@ -152,6 +155,7 @@ private:
     uint16_t board_id_     = 0;
     uint8_t  state_        = 0;
     uint8_t  wdt_count_    = 0;
+    uint8_t  buffered_records_ = 0; // records buffered awaiting offload
     uint8_t  vin_raw_      = 0;   // x0.1 V
     uint8_t  v5v_raw_      = 0;   // x0.1 V
     uint8_t  bat_v_raw_    = 0;   // x0.1 V
