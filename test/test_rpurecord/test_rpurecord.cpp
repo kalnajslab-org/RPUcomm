@@ -1,3 +1,6 @@
+// To run these tests in VSCode, in the PlatformIO pane go to:
+// PROJECT TASKS -> General -> Advanced -> Test.
+
 #include <Arduino.h>
 #include <unity.h>
 #include "RPUComm.h"
