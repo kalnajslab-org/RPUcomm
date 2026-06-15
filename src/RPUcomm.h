@@ -243,10 +243,9 @@ public:
     RPURecord();
 
     // Resets the round-robin slot rotation to slot 0. Call once per MEASURE session.
-    static void resetRotation();
-
+    void resetRotation();
     // Advances the round-robin slot rotation to the next slot (mod 8). Call once per record.
-    static void advanceRotation();
+    void advanceRotation();
 
     // Setters (engineering units -> packed encoding) ---------
 
@@ -372,8 +371,8 @@ private:
     uint16_t tdlas_ratio_raw_    = 0; // x1000, provisional (0-1.023)
     uint8_t  round_robin_idx_    = 0; // 0-7, captured at construction from next_round_robin_idx_
 
-    // Shared rotation state advanced via resetRotation()/advanceRotation().
-    static uint8_t next_round_robin_idx_;
+    // Rotation state advanced via resetRotation()/advanceRotation().
+    uint8_t next_round_robin_idx_;
 
     // Slow / round-robin fields (period = 8)
     uint16_t opc_d500_           = 0;

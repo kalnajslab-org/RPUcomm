@@ -260,9 +260,7 @@ String RPUPacket::toJSON() const
 // RPURecord
 // ---------------------------------------------------------------------------
 
-uint8_t RPURecord::next_round_robin_idx_ = 0;
-
-RPURecord::RPURecord() : round_robin_idx_(next_round_robin_idx_)
+RPURecord::RPURecord() : round_robin_idx_(0), next_round_robin_idx_(0)
 {
 }
 
