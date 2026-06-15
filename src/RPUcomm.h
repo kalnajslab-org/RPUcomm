@@ -239,12 +239,12 @@ constexpr size_t   RPU_RECORD_BYTES        = 38; // (4 + 260 + 40) / 8, no paddi
 // ---------------------------------------------------------------------------
 class RPURecord {
 public:
-    // Captures the current round-robin slot (see resetRotation()/advanceRotation()).
     RPURecord();
 
     // Resets the round-robin slot rotation to slot 0. Call once per MEASURE session.
     void resetRotation();
-    // Advances the round-robin slot rotation to the next slot (mod 8). Call once per record.
+    // Advances the round-robin slot rotation to the next slot (mod 8). Call once per record,
+    // after encode()/push() so the slot just encoded is preserved for that record.
     void advanceRotation();
 
     // Setters (engineering units -> packed encoding) ---------
@@ -369,10 +369,8 @@ private:
     uint16_t tdlas_bkg_raw_      = 0; // x100, provisional (0-40.95)
     uint8_t  tdlas_peak_raw_     = 0; // x10, provisional (0-25.5)
     uint16_t tdlas_ratio_raw_    = 0; // x1000, provisional (0-1.023)
-    uint8_t  round_robin_idx_    = 0; // 0-7, captured at construction from next_round_robin_idx_
-
-    // Rotation state advanced via resetRotation()/advanceRotation().
-    uint8_t next_round_robin_idx_;
+    // Current round-robin slot (0-7), advanced via resetRotation()/advanceRotation().
+    uint8_t  round_robin_idx_    = 0;
 
     // Slow / round-robin fields (period = 8)
     uint16_t opc_d500_           = 0;

@@ -260,18 +260,18 @@ String RPUPacket::toJSON() const
 // RPURecord
 // ---------------------------------------------------------------------------
 
-RPURecord::RPURecord() : round_robin_idx_(0), next_round_robin_idx_(0)
+RPURecord::RPURecord() : round_robin_idx_(0)
 {
 }
 
 void RPURecord::resetRotation()
 {
-    next_round_robin_idx_ = 0;
+    round_robin_idx_ = 0;
 }
 
 void RPURecord::advanceRotation()
 {
-    next_round_robin_idx_ = (next_round_robin_idx_ + 1) % 8;
+    round_robin_idx_ = (round_robin_idx_ + 1) % 8;
 }
 
 // Fast fields (period = 1) ----------------------------------
