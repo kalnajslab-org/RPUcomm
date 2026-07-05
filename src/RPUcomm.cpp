@@ -302,7 +302,7 @@ void RPURecord::setOpcD1000(uint16_t count)    { opc_d1000_ = count; }
 void RPURecord::setOpcD3000(uint16_t count)    { opc_d3000_ = count; }
 void RPURecord::setOpcD5000(uint16_t count)    { opc_d5000_ = count; }
 void RPURecord::setOpcD2500(uint16_t count)    { opc_d2500_ = count; }
-void RPURecord::setRs41MagXY(int32_t counts)   { rs41_mag_xy_raw_ = (uint16_t)(constrain(counts, -1000, 1000) + 1000); }
+void RPURecord::setRs41Hdg(float degrees)      { rs41_hdg_raw_ = (uint16_t)constrain((int)(degrees * 100.0f), 0, 36000); }
 void RPURecord::setBemfV(float volts)          { bemf_v_raw_      = (uint16_t)constrain((int)(volts * 1000.0f), 0, 65535); }
 void RPURecord::setTdlasSpec1(float value)     { tdlas_spec_1_raw_ = (uint16_t)constrain((int)value, 0, 65535); }
 void RPURecord::setTdlasSpec2(float value)     { tdlas_spec_2_raw_ = (uint16_t)constrain((int)value, 0, 65535); }
@@ -368,7 +368,7 @@ bool RPURecord::encode(uint8_t * buf, size_t buf_size) const
             bsw.write_unchecked<uint8_t> (0,          RPU_RPT_SLOT_PAD_BITS);
             break;
         case 3:
-            bsw.write_unchecked<uint16_t>(rs41_mag_xy_raw_, RPU_RPT_MAGXY_BITS);
+            bsw.write_unchecked<uint16_t>(rs41_hdg_raw_, RPU_RPT_HDG_BITS);
             bsw.write_unchecked<uint16_t>(bemf_v_raw_,      RPU_RPT_BEMF_BITS);
             bsw.write_unchecked<uint8_t> (0,                RPU_RPT_SLOT_PAD_BITS);
             break;
@@ -449,7 +449,7 @@ bool RPURecord::decode(const uint8_t * buf, size_t buf_size)
             bsr.read_unchecked<uint8_t>(RPU_RPT_SLOT_PAD_BITS);
             break;
         case 3:
-            rs41_mag_xy_raw_ = bsr.read_unchecked<uint16_t>(RPU_RPT_MAGXY_BITS);
+            rs41_hdg_raw_ = bsr.read_unchecked<uint16_t>(RPU_RPT_HDG_BITS);
             bemf_v_raw_      = bsr.read_unchecked<uint16_t>(RPU_RPT_BEMF_BITS);
             bsr.read_unchecked<uint8_t>(RPU_RPT_SLOT_PAD_BITS);
             break;
@@ -494,7 +494,7 @@ String RPURecord::toJSON() const
         "\"tdlas_mr_avg\":%.1f,\"tdlas_bkg\":%.2f,\"tdlas_peak\":%.1f,\"tdlas_ratio\":%.3f,"
         "\"round_robin_idx\":%u,"
         "\"opc_d500\":%u,\"opc_d700\":%u,\"opc_d1000\":%u,\"opc_d3000\":%u,\"opc_d5000\":%u,\"opc_d2500\":%u,"
-        "\"rs41_mag_xy\":%ld,\"bemf_v\":%.3f,"
+        "\"rs41_hdg\":%.2f,\"bemf_v\":%.3f,"
         "\"tdlas_spec_1\":%.0f,\"tdlas_spec_2\":%.0f,\"tdlas_spec_3\":%.0f,\"tdlas_spec_4\":%.0f,"
         "\"tsen_i\":%.0f,\"opc_i\":%.0f,\"pump_i\":%.0f,\"tdlas_i\":%.0f,"
         "\"v5\":%.2f,\"bat_t\":%.0f,\"pump_t\":%.0f,\"pcb_t\":%.0f,\"bat_v\":%.2f,\"heater_stat\":%u}",
@@ -506,7 +506,7 @@ String RPURecord::toJSON() const
         getTdlasMrAvg(), getTdlasBkg(), getTdlasPeak(), getTdlasRatio(),
         round_robin_idx_,
         opc_d500_, opc_d700_, opc_d1000_, opc_d3000_, opc_d5000_, opc_d2500_,
-        (long)getRs41MagXY(), getBemfV(),
+        getRs41Hdg(), getBemfV(),
         getTdlasSpec1(), getTdlasSpec2(), getTdlasSpec3(), getTdlasSpec4(),
         getTsenI(), getOpcI(), getPumpI(), getTdlasI(),
         getV5V(), getBatT(), getPumpT(), getPcbT(), getBatV(), heater_stat_);

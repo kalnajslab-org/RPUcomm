@@ -213,7 +213,7 @@ constexpr uint8_t  RPU_RPT_TDLAS_PEAK_BITS = 8;  // TDLAS peak x10, provisional 
 constexpr uint8_t  RPU_RPT_TDLAS_RATIO_BITS= 10; // TDLAS ratio x1000, provisional (0–1.023)
 
 // --- Round-robin slow fields (period = 8; one fixed-size slot per record) --
-constexpr uint8_t  RPU_RPT_MAGXY_BITS      = 16; // RS41 magnetometer X-Y, counts + 1000
+constexpr uint8_t  RPU_RPT_HDG_BITS        = 16; // RS41 heading, degrees x100 (0-360.00)
 constexpr uint8_t  RPU_RPT_BEMF_BITS       = 16; // pump BEMF, V x1000
 constexpr uint8_t  RPU_RPT_SPEC_BITS       = 16; // TDLAS spectra, raw passthrough, provisional
 constexpr uint8_t  RPU_RPT_HKCURR_BITS     = 8;  // subsystem currents, mA/4 (0–1020 mA, 4 mA res)
@@ -277,7 +277,7 @@ public:
     void setOpcD3000(uint16_t count);
     void setOpcD5000(uint16_t count);
     void setOpcD2500(uint16_t count);   // spec "10000nm" slot; ROPCData has no 10000nm channel
-    void setRs41MagXY(int32_t counts);
+    void setRs41Hdg(float degrees);
     void setBemfV(float volts);
     void setTdlasSpec1(float value);
     void setTdlasSpec2(float value);
@@ -324,7 +324,7 @@ public:
     uint16_t getOpcD3000()     const { return opc_d3000_; }
     uint16_t getOpcD5000()     const { return opc_d5000_; }
     uint16_t getOpcD2500()     const { return opc_d2500_; }
-    int32_t  getRs41MagXY()    const { return (int32_t)rs41_mag_xy_raw_ - 1000; }
+    float    getRs41Hdg()      const { return rs41_hdg_raw_ / 100.0f; }
     float    getBemfV()        const { return bemf_v_raw_ / 1000.0f; }
     float    getTdlasSpec1()   const { return (float)tdlas_spec_1_raw_; }
     float    getTdlasSpec2()   const { return (float)tdlas_spec_2_raw_; }
@@ -379,7 +379,7 @@ private:
     uint16_t opc_d3000_          = 0;
     uint16_t opc_d5000_          = 0;
     uint16_t opc_d2500_          = 0; // spec "10000nm" slot
-    uint16_t rs41_mag_xy_raw_    = 0; // counts + 1000
+    uint16_t rs41_hdg_raw_       = 0; // degrees x100
     uint16_t bemf_v_raw_         = 0; // x1000 V
     uint16_t tdlas_spec_1_raw_   = 0; // raw passthrough, provisional
     uint16_t tdlas_spec_2_raw_   = 0;

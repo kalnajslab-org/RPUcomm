@@ -77,7 +77,7 @@ void set_all_slow_fields(RPURecord &rec) {
     rec.setOpcD2500(400);
     rec.setOpcD3000(500);
     rec.setOpcD5000(600);
-    rec.setRs41MagXY(123);
+    rec.setRs41Hdg(123.0f);
     rec.setBemfV(3.3f);
     rec.setTdlasSpec1(1111);
     rec.setTdlasSpec2(2222);
@@ -104,7 +104,7 @@ void check_slot_fields(uint8_t slot, const RPURecord &decoded) {
     TEST_ASSERT_EQUAL_UINT16(slot == 1 ? 400 : 0, decoded.getOpcD2500());
     TEST_ASSERT_EQUAL_UINT16(slot == 2 ? 500 : 0, decoded.getOpcD3000());
     TEST_ASSERT_EQUAL_UINT16(slot == 2 ? 600 : 0, decoded.getOpcD5000());
-    TEST_ASSERT_EQUAL_INT32(slot == 3 ? 123 : -1000, decoded.getRs41MagXY());
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, slot == 3 ? 123.0f : 0.0f, decoded.getRs41Hdg());
     TEST_ASSERT_FLOAT_WITHIN(0.001f, slot == 3 ? 3.3f : 0.0f, decoded.getBemfV());
     TEST_ASSERT_EQUAL_FLOAT(slot == 4 ? 1111.0f : 0.0f, decoded.getTdlasSpec1());
     TEST_ASSERT_EQUAL_FLOAT(slot == 4 ? 2222.0f : 0.0f, decoded.getTdlasSpec2());
