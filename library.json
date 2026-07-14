@@ -1,6 +1,7 @@
 {
   "name": "RPUComm",
   "dependencies": {
-    "SerialComm": "https://github.com/kalnajslab-org/SerialComm.git"
+    "SerialComm": "https://github.com/kalnajslab-org/SerialComm.git",
+    "etlcpp/Embedded Template Library": "20.47.1"
   }
 }
