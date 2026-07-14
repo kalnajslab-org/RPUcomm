@@ -159,7 +159,7 @@ bool RPUPacket::encode(uint8_t * buf, size_t buf_size) const
     if (buf_size < RPU_PKT_BYTES) return false;
 
     memset(buf, 0, RPU_PKT_BYTES);
-    etl::bit_stream_writer bsw(buf, RPU_PKT_BYTES, etl::bit_order::msb_first);
+    etl::bit_stream_writer bsw(buf, RPU_PKT_BYTES, etl::endian::big);
 
     bsw.write_unchecked<uint8_t> (RPU_PKT_VERSION,  RPU_PKT_VER_BITS);
     bsw.write_unchecked<uint16_t>(board_id_,        RPU_PKT_ID_BITS);
@@ -196,7 +196,7 @@ bool RPUPacket::decode(const uint8_t * buf, size_t buf_size)
 {
     if (buf_size < RPU_PKT_BYTES) return false;
 
-    etl::bit_stream_reader bsr(buf, RPU_PKT_BYTES, etl::bit_order::msb_first);
+    etl::bit_stream_reader bsr(buf, RPU_PKT_BYTES, etl::endian::big);
 
     bsr.read_unchecked<uint8_t>(RPU_PKT_VER_BITS);  // packet version, not stored
 
@@ -324,7 +324,7 @@ bool RPURecord::encode(uint8_t * buf, size_t buf_size) const
     if (buf_size < RPU_RECORD_BYTES) return false;
 
     memset(buf, 0, RPU_RECORD_BYTES);
-    etl::bit_stream_writer bsw(buf, RPU_RECORD_BYTES, etl::bit_order::msb_first);
+    etl::bit_stream_writer bsw(buf, RPU_RECORD_BYTES, etl::endian::big);
 
     bsw.write_unchecked<uint8_t> (RPU_RPT_VERSION, RPU_RPT_VER_BITS);
 
@@ -405,7 +405,7 @@ bool RPURecord::decode(const uint8_t * buf, size_t buf_size)
 {
     if (buf_size < RPU_RECORD_BYTES) return false;
 
-    etl::bit_stream_reader bsr(buf, RPU_RECORD_BYTES, etl::bit_order::msb_first);
+    etl::bit_stream_reader bsr(buf, RPU_RECORD_BYTES, etl::endian::big);
 
     bsr.read_unchecked<uint8_t>(RPU_RPT_VER_BITS);  // packet version, not stored
 
@@ -513,4 +513,3 @@ String RPURecord::toJSON() const
 
     return String(buf);
 }
-
