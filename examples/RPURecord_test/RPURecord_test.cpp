@@ -1,9 +1,12 @@
-// To run these tests in VSCode, in the PlatformIO pane go to:
-// PROJECT TASKS -> General -> Advanced -> Test.
+// Unity-based test for RPURecord encode/decode round-trips.
+// Build with the RPURecord_test environment, upload, then open the Serial Monitor.
 
 #include <Arduino.h>
 #include <unity.h>
 #include "RPUComm.h"
+
+extern "C" void unity_output_char(char c) { Serial.print(c); }
+extern "C" void unity_output_flush(void)  { Serial.flush(); }
 
 void setUp(void) {}
 void tearDown(void) {}
@@ -123,14 +126,14 @@ void check_slot_fields(uint8_t slot, const RPURecord &decoded) {
 }
 
 void test_round_robin_slots() {
-    RPURecord::resetRotation();
+    RPURecord rec;
+    rec.resetRotation();
 
     // 9 iterations: one per slot (0-7), plus one extra to confirm the
     // rotation wraps back around to slot 0 after slot 7.
     for (uint8_t i = 0; i < 9; ++i) {
         uint8_t slot = i % 8;
 
-        RPURecord rec;
         set_all_slow_fields(rec);
 
         uint8_t buf[RPU_RECORD_BYTES];
@@ -141,15 +144,15 @@ void test_round_robin_slots() {
 
         check_slot_fields(slot, decoded);
 
-        RPURecord::advanceRotation();
+        rec.advanceRotation();
     }
 }
 
 void test_setter_clamping() {
     RPURecord rec;
     rec.setSats(20);        // clamps to 15 (4 bits)
-    rec.setGpsAge(100);      // clamps to 15 (4 bits)
-    rec.setLatDelta(10.0);   // clamps to int16 max -> 32767 / 50000
+    rec.setGpsAge(100);     // clamps to 15 (4 bits)
+    rec.setLatDelta(10.0);  // clamps to int16 max -> 32767 / 50000
 
     uint8_t buf[RPU_RECORD_BYTES];
     TEST_ASSERT_TRUE(rec.encode(buf, sizeof(buf)));
@@ -163,7 +166,10 @@ void test_setter_clamping() {
 }
 
 void setup() {
-    delay(2000);
+    Serial.begin(115200);
+    while (!Serial);
+
+    delay(2000); // give time for the serial monitor to open
 
     UNITY_BEGIN();
     RUN_TEST(test_record_size_constant);
@@ -174,4 +180,8 @@ void setup() {
     UNITY_END();
 }
 
-void loop() {}
+void loop() {
+    while (1) {
+        delay(1000);
+    }
+}
