@@ -351,6 +351,10 @@ public:
     // decoder can reconstruct absolute time and position from the per-record deltas.
     bool encodeBlockHeader(uint8_t* buf, size_t buf_size) const;
 
+    // Decodes a block header (RPU_BLOCK_HDR_BYTES) from the start of a received
+    // binary block, populating epoch_time, gps_lat, and gps_lon.
+    bool decodeBlockHeader(const uint8_t* buf, size_t buf_size);
+
     // JSON serialisation in engineering units.
     String toJSON() const;
 

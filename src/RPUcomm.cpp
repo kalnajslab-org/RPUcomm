@@ -527,3 +527,16 @@ bool RPURecord::encodeBlockHeader(uint8_t * buf, size_t buf_size) const
 
     return true;
 }
+
+bool RPURecord::decodeBlockHeader(const uint8_t* buf, size_t buf_size)
+{
+    if (buf_size < RPU_BLOCK_HDR_BYTES) return false;
+
+    etl::bit_stream_reader bsr(buf, RPU_BLOCK_HDR_BYTES, etl::endian::big);
+
+    epoch_time_ = bsr.read_unchecked<uint32_t>(32);
+    gps_lat_    = bsr.read_unchecked<int32_t> (32);
+    gps_lon_    = bsr.read_unchecked<int32_t> (32);
+
+    return true;
+}
