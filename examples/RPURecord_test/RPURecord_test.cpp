@@ -165,6 +165,43 @@ void test_setter_clamping() {
     TEST_ASSERT_FLOAT_WITHIN(0.00002f, 32767.0f / 50000.0f, decoded.getLatDelta());
 }
 
+void test_block_header() {
+    RPURecord rec;
+    rec.setGpsLat(45.678901);
+    rec.setGpsLon(-123.456789);
+    rec.setEpochTime(1753920000UL);  // 2025-07-31 00:00:00 UTC
+
+    // encodeBlockHeader fails if buffer is too small
+    uint8_t small[RPU_BLOCK_HDR_BYTES - 1];
+    TEST_ASSERT_FALSE(rec.encodeBlockHeader(small, sizeof(small)));
+
+    // round-trip through the block header
+    uint8_t buf[RPU_BLOCK_HDR_BYTES];
+    TEST_ASSERT_TRUE(rec.encodeBlockHeader(buf, sizeof(buf)));
+
+    RPURecord decoded;
+    // lat/lon/time default to 0 before setter is called
+    TEST_ASSERT_DOUBLE_WITHIN(1e-6, 0.0, decoded.getGpsLat());
+    TEST_ASSERT_DOUBLE_WITHIN(1e-6, 0.0, decoded.getGpsLon());
+    TEST_ASSERT_EQUAL_UINT32(0, decoded.getEpochTime());
+
+    // encode/decode of the record itself does not carry lat/lon/time
+    uint8_t rec_buf[RPU_RECORD_BYTES];
+    TEST_ASSERT_TRUE(rec.encode(rec_buf, sizeof(rec_buf)));
+    TEST_ASSERT_TRUE(decoded.decode(rec_buf, sizeof(rec_buf)));
+    TEST_ASSERT_DOUBLE_WITHIN(1e-6, 0.0, decoded.getGpsLat());
+    TEST_ASSERT_DOUBLE_WITHIN(1e-6, 0.0, decoded.getGpsLon());
+    TEST_ASSERT_EQUAL_UINT32(0, decoded.getEpochTime());
+
+    // setter/getter round-trip for lat/lon at 1e-6 degree resolution, and epoch time
+    decoded.setGpsLat(45.678901);
+    decoded.setGpsLon(-123.456789);
+    decoded.setEpochTime(1753920000UL);
+    TEST_ASSERT_DOUBLE_WITHIN(1e-6, 45.678901,   decoded.getGpsLat());
+    TEST_ASSERT_DOUBLE_WITHIN(1e-6, -123.456789, decoded.getGpsLon());
+    TEST_ASSERT_EQUAL_UINT32(1753920000UL, decoded.getEpochTime());
+}
+
 void setup() {
     Serial.begin(115200);
     while (!Serial);
@@ -177,6 +214,7 @@ void setup() {
     RUN_TEST(test_fast_field_roundtrip);
     RUN_TEST(test_round_robin_slots);
     RUN_TEST(test_setter_clamping);
+    RUN_TEST(test_block_header);
     UNITY_END();
 }
 

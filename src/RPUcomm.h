@@ -225,6 +225,7 @@ constexpr uint8_t  RPU_RPT_SLOT_PAD_BITS   = 8;  // padding within the two-field
 constexpr size_t   RPU_RPT_SLOT_BITS       = 40; // fixed round-robin slot size
 
 constexpr size_t   RPU_RECORD_BYTES        = 38; // (4 + 260 + 40) / 8, no padding needed
+constexpr size_t   RPU_BLOCK_HDR_BYTES     = 12; // epoch_time (uint32) + gps_lat (int32) + gps_lon (int32)
 
 // ---------------------------------------------------------------------------
 // RPURecord
@@ -345,8 +346,24 @@ public:
     bool encode(uint8_t* buf, size_t buf_size) const;
     bool decode(const uint8_t* buf, size_t buf_size);
 
+    // Encodes a block header (RPU_BLOCK_HDR_BYTES) to prepend to a sequence
+    // of encoded RPURecords. Contains epoch_time, gps_lat and gps_lon so the
+    // decoder can reconstruct absolute time and position from the per-record deltas.
+    bool encodeBlockHeader(uint8_t* buf, size_t buf_size) const;
+
     // JSON serialisation in engineering units.
     String toJSON() const;
+
+    // GPS reference position and time — NOT included in the bit-packed record.
+    // Set by the program populating the record; used as metadata (e.g. block-
+    // transfer header) so receivers can reconstruct absolute position from the
+    // compressed lat/lon deltas. Programs that only call decode() will get 0.
+    void     setGpsLat(double degrees)  { gps_lat_  = (int32_t)(degrees * 1.0e6); }
+    void     setGpsLon(double degrees)  { gps_lon_  = (int32_t)(degrees * 1.0e6); }
+    double   getGpsLat() const          { return gps_lat_ / 1.0e6; }
+    double   getGpsLon() const          { return gps_lon_ / 1.0e6; }
+    void     setEpochTime(uint32_t t)   { epoch_time_ = t; }  // Unix epoch (UTC)
+    uint32_t getEpochTime() const       { return epoch_time_; }
 
 private:
     // Fast fields (period = 1)
@@ -395,6 +412,11 @@ private:
     uint8_t  pcb_t_raw_          = 0; // T + 100
     uint16_t bat_v_raw_          = 0; // V x100, 12 bits
     uint8_t  heater_stat_        = 0; // 4 bits
+
+    // Metadata — not bit-packed, not transmitted in the compressed record.
+    uint32_t epoch_time_         = 0; // Unix epoch (UTC)
+    int32_t  gps_lat_            = 0; // degrees * 1e6
+    int32_t  gps_lon_            = 0; // degrees * 1e6
 };
 
 #endif /* RPUComm_H */

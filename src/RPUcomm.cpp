@@ -513,3 +513,17 @@ String RPURecord::toJSON() const
 
     return String(buf);
 }
+
+bool RPURecord::encodeBlockHeader(uint8_t * buf, size_t buf_size) const
+{
+    if (buf_size < RPU_BLOCK_HDR_BYTES) return false;
+
+    memset(buf, 0, RPU_BLOCK_HDR_BYTES);
+    etl::bit_stream_writer bsw(buf, RPU_BLOCK_HDR_BYTES, etl::endian::big);
+
+    bsw.write_unchecked<uint32_t>(epoch_time_, 32);
+    bsw.write_unchecked<int32_t> (gps_lat_,   32);
+    bsw.write_unchecked<int32_t> (gps_lon_,   32);
+
+    return true;
+}
