@@ -271,7 +271,7 @@ void RPURecord::resetRotation()
 
 void RPURecord::advanceRotation()
 {
-    round_robin_idx_ = (round_robin_idx_ + 1) % 8;
+    round_robin_idx_ = (round_robin_idx_ + 1) % 6;
 }
 
 // Fast fields (period = 1) ----------------------------------
@@ -290,10 +290,17 @@ void RPURecord::setRs41AirT(float celsius)     { rs41_air_t_raw_     = (uint16_t
 void RPURecord::setRs41Pres(float millibar)    { rs41_pres_raw_      = (uint16_t)constrain((int)(millibar * 10.0f), 0, 65535); }
 void RPURecord::setRs41Humidity(float percent) { rs41_humidity_raw_  = (uint16_t)constrain((int)(percent * 100.0f), 0, 65535); }
 void RPURecord::setRs41HSensorT(float celsius) { rs41_hsensor_t_raw_ = (uint16_t)constrain((int)((celsius + 100.0f) * 100.0f), 0, 65535); }
-void RPURecord::setTdlasMrAvg(float value)     { tdlas_mr_avg_raw_ = (uint16_t)constrain((int)(value * 10.0f), 0, 1023); }
-void RPURecord::setTdlasBkg(float value)       { tdlas_bkg_raw_    = (uint16_t)constrain((int)(value * 100.0f), 0, 4095); }
-void RPURecord::setTdlasPeak(float value)      { tdlas_peak_raw_   = (uint8_t)constrain((int)(value * 10.0f), 0, 255); }
-void RPURecord::setTdlasRatio(float value)     { tdlas_ratio_raw_  = (uint16_t)constrain((int)(value * 1000.0f), 0, 1023); }
+void RPURecord::setTdlasMrAvg(float value)     { tdlas_mr_avg_raw_  = (uint16_t)constrain((int)(value * 100.0f), 0, 65535); }
+void RPURecord::setTdlasBkg(float value)       { tdlas_bkg_raw_     = (uint16_t)constrain((int)(value * 10.0f), 0, 4095); }
+void RPURecord::setTdlasPeak(float value)      { tdlas_peak_raw_    = (uint8_t)constrain((int)(value * 10.0f), 0, 255); }
+void RPURecord::setTdlasRatio(float value)     { tdlas_ratio_raw_   = (uint16_t)constrain((int)(value * 1000.0f), 0, 1023); }
+void RPURecord::setTdlasMaxVmr(float value)    { tdlas_max_vmr_raw_ = (uint16_t)constrain((int)(value * 10.0f), 0, 16383); }
+void RPURecord::setTdlasLaserT(float celsius)  { tdlas_laser_t_raw_ = (uint8_t)constrain((int)celsius, 0, 255); }
+void RPURecord::setTdlasIdx(uint8_t idx)       { tdlas_idx_         = (uint8_t)constrain((int)idx, 0, 15); }
+void RPURecord::setTdlasSpec1(float value)     { tdlas_spec_1_raw_  = (uint16_t)constrain((int)(value * 1000.0f), 0, 4095); }
+void RPURecord::setTdlasSpec2(float value)     { tdlas_spec_2_raw_  = (uint16_t)constrain((int)(value * 1000.0f), 0, 4095); }
+void RPURecord::setTdlasSpec3(float value)     { tdlas_spec_3_raw_  = (uint16_t)constrain((int)(value * 1000.0f), 0, 4095); }
+void RPURecord::setTdlasSpec4(float value)     { tdlas_spec_4_raw_  = (uint16_t)constrain((int)(value * 1000.0f), 0, 4095); }
 
 // Slow / round-robin fields (period = 8) ---------------------
 void RPURecord::setOpcD500(uint16_t count)     { opc_d500_  = count; }
@@ -302,12 +309,8 @@ void RPURecord::setOpcD1000(uint16_t count)    { opc_d1000_ = count; }
 void RPURecord::setOpcD3000(uint16_t count)    { opc_d3000_ = count; }
 void RPURecord::setOpcD5000(uint16_t count)    { opc_d5000_ = count; }
 void RPURecord::setOpcD2500(uint16_t count)    { opc_d2500_ = count; }
-void RPURecord::setRs41Hdg(float degrees)      { rs41_hdg_raw_ = (uint16_t)constrain((int)(degrees * 100.0f), 0, 36000); }
+void RPURecord::setRs41Hdg(float degrees)      { rs41_hdg_raw_ = (uint8_t)constrain((int)(degrees * 256.0f / 360.0f + 0.5f), 0, 255); }
 void RPURecord::setBemfV(float volts)          { bemf_v_raw_      = (uint16_t)constrain((int)(volts * 1000.0f), 0, 65535); }
-void RPURecord::setTdlasSpec1(float value)     { tdlas_spec_1_raw_ = (uint16_t)constrain((int)value, 0, 65535); }
-void RPURecord::setTdlasSpec2(float value)     { tdlas_spec_2_raw_ = (uint16_t)constrain((int)value, 0, 65535); }
-void RPURecord::setTdlasSpec3(float value)     { tdlas_spec_3_raw_ = (uint16_t)constrain((int)value, 0, 65535); }
-void RPURecord::setTdlasSpec4(float value)     { tdlas_spec_4_raw_ = (uint16_t)constrain((int)value, 0, 65535); }
 void RPURecord::setTsenI(float milliamps)      { tsen_i_raw_  = (uint8_t)constrain((int)(milliamps / 4.0f), 0, 255); }
 void RPURecord::setOpcI(float milliamps)       { opc_i_raw_   = (uint8_t)constrain((int)(milliamps / 4.0f), 0, 255); }
 void RPURecord::setPumpI(float milliamps)      { pump_i_raw_  = (uint8_t)constrain((int)(milliamps / 4.0f), 0, 255); }
@@ -345,10 +348,17 @@ bool RPURecord::encode(uint8_t * buf, size_t buf_size) const
     bsw.write_unchecked<uint16_t>(rs41_pres_raw_,    RPU_RPT_RS41_P_BITS);
     bsw.write_unchecked<uint16_t>(rs41_humidity_raw_,RPU_RPT_RS41_RH_BITS);
     bsw.write_unchecked<uint16_t>(rs41_hsensor_t_raw_, RPU_RPT_RS41_T_BITS);
-    bsw.write_unchecked<uint16_t>(tdlas_mr_avg_raw_, RPU_RPT_TDLAS_VMR_BITS);
-    bsw.write_unchecked<uint16_t>(tdlas_bkg_raw_,    RPU_RPT_TDLAS_BKG_BITS);
-    bsw.write_unchecked<uint8_t> (tdlas_peak_raw_,   RPU_RPT_TDLAS_PEAK_BITS);
-    bsw.write_unchecked<uint16_t>(tdlas_ratio_raw_,  RPU_RPT_TDLAS_RATIO_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_mr_avg_raw_,   RPU_RPT_TDLAS_VMR_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_bkg_raw_,      RPU_RPT_TDLAS_BKG_BITS);
+    bsw.write_unchecked<uint8_t> (tdlas_peak_raw_,     RPU_RPT_TDLAS_PEAK_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_ratio_raw_,    RPU_RPT_TDLAS_RATIO_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_max_vmr_raw_,  RPU_RPT_TDLAS_MAX_VMR_BITS);
+    bsw.write_unchecked<uint8_t> (tdlas_laser_t_raw_,  RPU_RPT_TDLAS_LASER_T_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_spec_1_raw_,  RPU_RPT_TDLAS_SPEC_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_spec_2_raw_,  RPU_RPT_TDLAS_SPEC_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_spec_3_raw_,  RPU_RPT_TDLAS_SPEC_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_spec_4_raw_,  RPU_RPT_TDLAS_SPEC_BITS);
+    bsw.write_unchecked<uint8_t> (tdlas_idx_,         RPU_RPT_TDLAS_INDX_BITS);
 
     // Slow / round-robin fields (period = 8) — one 40-bit slot per record
     switch (round_robin_idx_) {
@@ -368,28 +378,19 @@ bool RPURecord::encode(uint8_t * buf, size_t buf_size) const
             bsw.write_unchecked<uint8_t> (0,          RPU_RPT_SLOT_PAD_BITS);
             break;
         case 3:
-            bsw.write_unchecked<uint16_t>(rs41_hdg_raw_, RPU_RPT_HDG_BITS);
-            bsw.write_unchecked<uint16_t>(bemf_v_raw_,      RPU_RPT_BEMF_BITS);
-            bsw.write_unchecked<uint8_t> (0,                RPU_RPT_SLOT_PAD_BITS);
+            bsw.write_unchecked<uint8_t> (rs41_hdg_raw_, RPU_RPT_HDG_BITS);
+            bsw.write_unchecked<uint16_t>(bemf_v_raw_,   RPU_RPT_BEMF_BITS);
+            bsw.write_unchecked<uint8_t> (0, RPU_RPT_SLOT_PAD_BITS);
+            bsw.write_unchecked<uint8_t> (0, RPU_RPT_SLOT_PAD_BITS);
             break;
         case 4:
-            bsw.write_unchecked<uint16_t>(tdlas_spec_1_raw_, RPU_RPT_SPEC_BITS);
-            bsw.write_unchecked<uint16_t>(tdlas_spec_2_raw_, RPU_RPT_SPEC_BITS);
-            bsw.write_unchecked<uint8_t> (0,                 RPU_RPT_SLOT_PAD_BITS);
-            break;
-        case 5:
-            bsw.write_unchecked<uint16_t>(tdlas_spec_3_raw_, RPU_RPT_SPEC_BITS);
-            bsw.write_unchecked<uint16_t>(tdlas_spec_4_raw_, RPU_RPT_SPEC_BITS);
-            bsw.write_unchecked<uint8_t> (0,                 RPU_RPT_SLOT_PAD_BITS);
-            break;
-        case 6:
             bsw.write_unchecked<uint8_t>(tsen_i_raw_,  RPU_RPT_HKCURR_BITS);
             bsw.write_unchecked<uint8_t>(opc_i_raw_,   RPU_RPT_HKCURR_BITS);
             bsw.write_unchecked<uint8_t>(pump_i_raw_,  RPU_RPT_HKCURR_BITS);
             bsw.write_unchecked<uint8_t>(tdlas_i_raw_, RPU_RPT_HKCURR_BITS);
             bsw.write_unchecked<uint8_t>(v5v_raw_,     RPU_RPT_V5V_BITS);
             break;
-        case 7:
+        case 5:
             bsw.write_unchecked<uint8_t> (bat_t_raw_,  RPU_RPT_HKTEMP_BITS);
             bsw.write_unchecked<uint8_t> (pump_t_raw_, RPU_RPT_HKTEMP_BITS);
             bsw.write_unchecked<uint8_t> (pcb_t_raw_,  RPU_RPT_HKTEMP_BITS);
@@ -430,6 +431,13 @@ bool RPURecord::decode(const uint8_t * buf, size_t buf_size)
     tdlas_bkg_raw_      = bsr.read_unchecked<uint16_t>(RPU_RPT_TDLAS_BKG_BITS);
     tdlas_peak_raw_     = bsr.read_unchecked<uint8_t> (RPU_RPT_TDLAS_PEAK_BITS);
     tdlas_ratio_raw_    = bsr.read_unchecked<uint16_t>(RPU_RPT_TDLAS_RATIO_BITS);
+    tdlas_max_vmr_raw_  = bsr.read_unchecked<uint16_t>(RPU_RPT_TDLAS_MAX_VMR_BITS);
+    tdlas_laser_t_raw_  = bsr.read_unchecked<uint8_t> (RPU_RPT_TDLAS_LASER_T_BITS);
+    tdlas_spec_1_raw_   = bsr.read_unchecked<uint16_t>(RPU_RPT_TDLAS_SPEC_BITS);
+    tdlas_spec_2_raw_   = bsr.read_unchecked<uint16_t>(RPU_RPT_TDLAS_SPEC_BITS);
+    tdlas_spec_3_raw_   = bsr.read_unchecked<uint16_t>(RPU_RPT_TDLAS_SPEC_BITS);
+    tdlas_spec_4_raw_   = bsr.read_unchecked<uint16_t>(RPU_RPT_TDLAS_SPEC_BITS);
+    tdlas_idx_          = bsr.read_unchecked<uint8_t> (RPU_RPT_TDLAS_INDX_BITS);
 
     // Slow / round-robin fields (period = 8) — one 40-bit slot per record
     switch (round_robin_idx_) {
@@ -449,28 +457,19 @@ bool RPURecord::decode(const uint8_t * buf, size_t buf_size)
             bsr.read_unchecked<uint8_t>(RPU_RPT_SLOT_PAD_BITS);
             break;
         case 3:
-            rs41_hdg_raw_ = bsr.read_unchecked<uint16_t>(RPU_RPT_HDG_BITS);
-            bemf_v_raw_      = bsr.read_unchecked<uint16_t>(RPU_RPT_BEMF_BITS);
+            rs41_hdg_raw_ = bsr.read_unchecked<uint8_t> (RPU_RPT_HDG_BITS);
+            bemf_v_raw_   = bsr.read_unchecked<uint16_t>(RPU_RPT_BEMF_BITS);
+            bsr.read_unchecked<uint8_t>(RPU_RPT_SLOT_PAD_BITS);
             bsr.read_unchecked<uint8_t>(RPU_RPT_SLOT_PAD_BITS);
             break;
         case 4:
-            tdlas_spec_1_raw_ = bsr.read_unchecked<uint16_t>(RPU_RPT_SPEC_BITS);
-            tdlas_spec_2_raw_ = bsr.read_unchecked<uint16_t>(RPU_RPT_SPEC_BITS);
-            bsr.read_unchecked<uint8_t>(RPU_RPT_SLOT_PAD_BITS);
-            break;
-        case 5:
-            tdlas_spec_3_raw_ = bsr.read_unchecked<uint16_t>(RPU_RPT_SPEC_BITS);
-            tdlas_spec_4_raw_ = bsr.read_unchecked<uint16_t>(RPU_RPT_SPEC_BITS);
-            bsr.read_unchecked<uint8_t>(RPU_RPT_SLOT_PAD_BITS);
-            break;
-        case 6:
             tsen_i_raw_  = bsr.read_unchecked<uint8_t>(RPU_RPT_HKCURR_BITS);
             opc_i_raw_   = bsr.read_unchecked<uint8_t>(RPU_RPT_HKCURR_BITS);
             pump_i_raw_  = bsr.read_unchecked<uint8_t>(RPU_RPT_HKCURR_BITS);
             tdlas_i_raw_ = bsr.read_unchecked<uint8_t>(RPU_RPT_HKCURR_BITS);
             v5v_raw_     = bsr.read_unchecked<uint8_t>(RPU_RPT_V5V_BITS);
             break;
-        case 7:
+        case 5:
             bat_t_raw_    = bsr.read_unchecked<uint8_t> (RPU_RPT_HKTEMP_BITS);
             pump_t_raw_   = bsr.read_unchecked<uint8_t> (RPU_RPT_HKTEMP_BITS);
             pcb_t_raw_    = bsr.read_unchecked<uint8_t> (RPU_RPT_HKTEMP_BITS);
@@ -491,11 +490,12 @@ String RPURecord::toJSON() const
         "\"opc_d300\":%u,\"opc_d2000\":%u,"
         "\"tsen_airt\":%u,\"tsen_pres\":%u,\"tsen_ptemp\":%u,"
         "\"rs41_air_t\":%.2f,\"rs41_pres\":%.1f,\"rs41_humidity\":%.2f,\"rs41_hsensor_t\":%.2f,"
-        "\"tdlas_mr_avg\":%.1f,\"tdlas_bkg\":%.2f,\"tdlas_peak\":%.1f,\"tdlas_ratio\":%.3f,"
+        "\"tdlas_mr_avg\":%.2f,\"tdlas_bkg\":%.1f,\"tdlas_peak\":%.1f,\"tdlas_ratio\":%.3f,"
+        "\"tdlas_max_vmr\":%.1f,\"tdlas_laser_t\":%.0f,"
+        "\"tdlas_spec1\":%.3f,\"tdlas_spec2\":%.3f,\"tdlas_spec3\":%.3f,\"tdlas_spec4\":%.3f,\"tdlas_idx\":%u,"
         "\"round_robin_idx\":%u,"
         "\"opc_d500\":%u,\"opc_d700\":%u,\"opc_d1000\":%u,\"opc_d3000\":%u,\"opc_d5000\":%u,\"opc_d2500\":%u,"
         "\"rs41_hdg\":%.2f,\"bemf_v\":%.3f,"
-        "\"tdlas_spec_1\":%.0f,\"tdlas_spec_2\":%.0f,\"tdlas_spec_3\":%.0f,\"tdlas_spec_4\":%.0f,"
         "\"tsen_i\":%.0f,\"opc_i\":%.0f,\"pump_i\":%.0f,\"tdlas_i\":%.0f,"
         "\"v5\":%.2f,\"bat_t\":%.0f,\"pump_t\":%.0f,\"pcb_t\":%.0f,\"bat_v\":%.2f,\"heater_stat\":%u}",
         elapsed_s_, getAlt(), getLatDelta(), getLonDelta(),
@@ -504,10 +504,11 @@ String RPURecord::toJSON() const
         tsen_airt_raw_, tsen_pres_raw_, tsen_ptemp_raw_,
         getRs41AirT(), getRs41Pres(), getRs41Humidity(), getRs41HSensorT(),
         getTdlasMrAvg(), getTdlasBkg(), getTdlasPeak(), getTdlasRatio(),
+        getTdlasMaxVmr(), getTdlasLaserT(),
+        getTdlasSpec1(), getTdlasSpec2(), getTdlasSpec3(), getTdlasSpec4(), getTdlasIdx(),
         round_robin_idx_,
         opc_d500_, opc_d700_, opc_d1000_, opc_d3000_, opc_d5000_, opc_d2500_,
         getRs41Hdg(), getBemfV(),
-        getTdlasSpec1(), getTdlasSpec2(), getTdlasSpec3(), getTdlasSpec4(),
         getTsenI(), getOpcI(), getPumpI(), getTdlasI(),
         getV5V(), getBatT(), getPumpT(), getPcbT(), getBatV(), heater_stat_);
 

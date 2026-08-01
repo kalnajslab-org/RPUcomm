@@ -196,35 +196,42 @@ constexpr uint8_t  RPU_RPT_VERSION       = 1;
 constexpr uint8_t  RPU_RPT_VER_BITS      = 4;    // packet format version
 
 // --- Fast fields (period = 1, present in every record) ---------------------
-constexpr uint8_t  RPU_RPT_RR_IDX_BITS     = 4;  // round-robin slot index (0–7)
-constexpr uint8_t  RPU_RPT_ELAPSED_BITS    = 16; // elapsed seconds since GPSStartTime (0–65535 s)
-constexpr uint8_t  RPU_RPT_ALT_BITS        = 16; // altitude, m, raw
-constexpr uint8_t  RPU_RPT_GPS_DELTA_BITS  = 16; // (lat|lon - start) x50000, signed
-constexpr uint8_t  RPU_RPT_SATS_BITS       = 4;  // satellite count (0–15)
-constexpr uint8_t  RPU_RPT_GPS_AGE_BITS    = 4;  // GPS fix age, s, clamped (0–15 s)
-constexpr uint8_t  RPU_RPT_OPC_BITS        = 16; // OPC bin counts, raw
-constexpr uint8_t  RPU_RPT_TSEN_BITS       = 16; // TSEN raw counts (airt: 0–4095; pres/ptemp: top 16 bits of 24-bit count)
-constexpr uint8_t  RPU_RPT_RS41_T_BITS     = 16; // (T + 100) x100  (-100.00 to 555.35 °C)
-constexpr uint8_t  RPU_RPT_RS41_P_BITS     = 16; // pressure x10    (0–6553.5 mb)
-constexpr uint8_t  RPU_RPT_RS41_RH_BITS    = 16; // RH x100         (0–655.35 %)
-constexpr uint8_t  RPU_RPT_TDLAS_VMR_BITS  = 10; // TDLAS VMR_ave x10, provisional (0–102.3)
-constexpr uint8_t  RPU_RPT_TDLAS_BKG_BITS  = 12; // TDLAS bkg x100, provisional (0–40.95)
-constexpr uint8_t  RPU_RPT_TDLAS_PEAK_BITS = 8;  // TDLAS peak x10, provisional (0–25.5)
-constexpr uint8_t  RPU_RPT_TDLAS_RATIO_BITS= 10; // TDLAS ratio x1000, provisional (0–1.023)
+constexpr uint8_t  RPU_RPT_RR_IDX_BITS          = 4;  // round-robin slot index (0–5)
+constexpr uint8_t  RPU_RPT_ELAPSED_BITS         = 16; // elapsed seconds since GPSStartTime (0–65535 s)
 
-// --- Round-robin slow fields (period = 8; one fixed-size slot per record) --
-constexpr uint8_t  RPU_RPT_HDG_BITS        = 16; // RS41 heading, degrees x100 (0-360.00)
+constexpr uint8_t  RPU_RPT_ALT_BITS             = 16; // altitude, m, raw
+constexpr uint8_t  RPU_RPT_GPS_DELTA_BITS       = 16; // (lat|lon - start) x50000, signed
+constexpr uint8_t  RPU_RPT_SATS_BITS            = 4;  // satellite count (0–15)
+constexpr uint8_t  RPU_RPT_GPS_AGE_BITS         = 4;  // GPS fix age, s, clamped (0–15 s)
+
+constexpr uint8_t  RPU_RPT_OPC_BITS             = 16; // OPC bin counts, raw
+constexpr uint8_t  RPU_RPT_TSEN_BITS            = 16; // TSEN raw counts (airt: 0–4095; pres/ptemp: top 16 bits of 24-bit count)
+
+constexpr uint8_t  RPU_RPT_RS41_T_BITS          = 16; // (T + 100) x100  (-100.00 to 555.35 °C)
+constexpr uint8_t  RPU_RPT_RS41_P_BITS          = 16; // pressure x10    (0–6553.5 mb)
+constexpr uint8_t  RPU_RPT_RS41_RH_BITS         = 16; // RH x100         (0–655.35 %)
+
+constexpr uint8_t  RPU_RPT_TDLAS_VMR_BITS       = 16; // TDLAS VMR_ave x100 (0–655.36)
+constexpr uint8_t  RPU_RPT_TDLAS_BKG_BITS       = 12; // TDLAS bkg x10 (0–409.5)
+constexpr uint8_t  RPU_RPT_TDLAS_PEAK_BITS      = 8;  // TDLAS peak x10 (0–25.5)
+constexpr uint8_t  RPU_RPT_TDLAS_RATIO_BITS     = 10; // TDLAS ratio x1000 (0–1.023)
+constexpr uint8_t  RPU_RPT_TDLAS_MAX_VMR_BITS   = 14; // TDLAS max VMR x10 (0–1638.4)
+constexpr uint8_t  RPU_RPT_TDLAS_LASER_T_BITS   = 8;  // TDLAS laser temp, °C (0–255)
+constexpr uint8_t  RPU_RPT_TDLAS_INDX_BITS      = 4;  // TDLAS spectra index (0–15, instrument data)
+constexpr uint8_t  RPU_RPT_TDLAS_SPEC_BITS      = 12; // TDLAS spectra value x1000 (0–4.095), per channel
+
+// --- Round-robin slow fields (period = 6; one fixed-size slot per record) --
+constexpr uint8_t  RPU_RPT_HDG_BITS        = 8;  // RS41 heading, x256/360 (0–360°, ~1.41° res)
 constexpr uint8_t  RPU_RPT_BEMF_BITS       = 16; // pump BEMF, V x1000
-constexpr uint8_t  RPU_RPT_SPEC_BITS       = 16; // TDLAS spectra, raw passthrough, provisional
 constexpr uint8_t  RPU_RPT_HKCURR_BITS     = 8;  // subsystem currents, mA/4 (0–1020 mA, 4 mA res)
 constexpr uint8_t  RPU_RPT_V5V_BITS        = 8;  // V x50  (0–5.10 V, 0.02 V res)
 constexpr uint8_t  RPU_RPT_HKTEMP_BITS     = 8;  // (T + 100), 1 °C res (-100 to 155 °C)
 constexpr uint8_t  RPU_RPT_VOLT_BITS       = 12; // battery voltage x100 (0–40.95 V)
 constexpr uint8_t  RPU_RPT_HEATER_BITS     = 4;  // heater status (bit0: battery heater on)
-constexpr uint8_t  RPU_RPT_SLOT_PAD_BITS   = 8;  // padding within the two-field 40-bit slots (indices 0-5)
+constexpr uint8_t  RPU_RPT_SLOT_PAD_BITS   = 8;  // padding within the two-field 40-bit slots (indices 0-3)
 constexpr size_t   RPU_RPT_SLOT_BITS       = 40; // fixed round-robin slot size
 
-constexpr size_t   RPU_RECORD_BYTES        = 38; // (4 + 260 + 40) / 8, no padding needed
+constexpr size_t   RPU_RECORD_BYTES        = 48; // (344 fast + 40 slow) / 8
 constexpr size_t   RPU_BLOCK_HDR_BYTES     = 12; // epoch_time (uint32) + gps_lat (int32) + gps_lon (int32)
 
 // ---------------------------------------------------------------------------
@@ -266,12 +273,19 @@ public:
     void setRs41Pres(float millibar);
     void setRs41Humidity(float percent);
     void setRs41HSensorT(float celsius);
-    void setTdlasMrAvg(float value);
-    void setTdlasBkg(float value);
-    void setTdlasPeak(float value);
-    void setTdlasRatio(float value);
+    void setTdlasMrAvg(float value);   // VMR_ave x100 (0–655.36)
+    void setTdlasBkg(float value);     // bkg x10 (0–409.5)
+    void setTdlasPeak(float value);    // peak x10 (0–25.5)
+    void setTdlasRatio(float value);   // ratio x1000 (0–1.023)
+    void setTdlasMaxVmr(float value);  // max VMR x10 (0–1638.4)
+    void setTdlasLaserT(float celsius);// laser temperature (0–255°C)
+    void setTdlasIdx(uint8_t idx);     // instrument data value (0–15)
+    void setTdlasSpec1(float value);   // spectra channel 1 x1000 (0–4.095)
+    void setTdlasSpec2(float value);   // spectra channel 2 x1000 (0–4.095)
+    void setTdlasSpec3(float value);   // spectra channel 3 x1000 (0–4.095)
+    void setTdlasSpec4(float value);   // spectra channel 4 x1000 (0–4.095)
 
-    // Slow / round-robin fields (period = 8)
+    // Slow / round-robin fields (period = 6)
     void setOpcD500(uint16_t count);
     void setOpcD700(uint16_t count);
     void setOpcD1000(uint16_t count);
@@ -280,10 +294,6 @@ public:
     void setOpcD2500(uint16_t count);   // spec "10000nm" slot; ROPCData has no 10000nm channel
     void setRs41Hdg(float degrees);
     void setBemfV(float volts);
-    void setTdlasSpec1(float value);
-    void setTdlasSpec2(float value);
-    void setTdlasSpec3(float value);
-    void setTdlasSpec4(float value);
     void setTsenI(float milliamps);
     void setOpcI(float milliamps);
     void setPumpI(float milliamps);
@@ -313,10 +323,18 @@ public:
     float    getRs41Pres()     const { return rs41_pres_raw_ / 10.0f; }
     float    getRs41Humidity() const { return rs41_humidity_raw_ / 100.0f; }
     float    getRs41HSensorT() const { return (rs41_hsensor_t_raw_ / 100.0f) - 100.0f; }
-    float    getTdlasMrAvg()   const { return tdlas_mr_avg_raw_ / 10.0f; }
-    float    getTdlasBkg()     const { return tdlas_bkg_raw_ / 100.0f; }
+
+    float    getTdlasMrAvg()   const { return tdlas_mr_avg_raw_ / 100.0f; }
+    float    getTdlasBkg()     const { return tdlas_bkg_raw_ / 10.0f; }
     float    getTdlasPeak()    const { return tdlas_peak_raw_ / 10.0f; }
     float    getTdlasRatio()   const { return tdlas_ratio_raw_ / 1000.0f; }
+    float    getTdlasMaxVmr()  const { return tdlas_max_vmr_raw_ / 10.0f; }
+    float    getTdlasLaserT()  const { return (float)tdlas_laser_t_raw_; }
+    uint8_t  getTdlasIdx()     const { return tdlas_idx_; }
+    float    getTdlasSpec1()   const { return tdlas_spec_1_raw_ / 1000.0f; }
+    float    getTdlasSpec2()   const { return tdlas_spec_2_raw_ / 1000.0f; }
+    float    getTdlasSpec3()   const { return tdlas_spec_3_raw_ / 1000.0f; }
+    float    getTdlasSpec4()   const { return tdlas_spec_4_raw_ / 1000.0f; }
 
     // Slow / round-robin fields
     uint16_t getOpcD500()      const { return opc_d500_; }
@@ -325,12 +343,8 @@ public:
     uint16_t getOpcD3000()     const { return opc_d3000_; }
     uint16_t getOpcD5000()     const { return opc_d5000_; }
     uint16_t getOpcD2500()     const { return opc_d2500_; }
-    float    getRs41Hdg()      const { return rs41_hdg_raw_ / 100.0f; }
+    float    getRs41Hdg()      const { return rs41_hdg_raw_ * (360.0f / 256.0f); }
     float    getBemfV()        const { return bemf_v_raw_ / 1000.0f; }
-    float    getTdlasSpec1()   const { return (float)tdlas_spec_1_raw_; }
-    float    getTdlasSpec2()   const { return (float)tdlas_spec_2_raw_; }
-    float    getTdlasSpec3()   const { return (float)tdlas_spec_3_raw_; }
-    float    getTdlasSpec4()   const { return (float)tdlas_spec_4_raw_; }
     float    getTsenI()        const { return tsen_i_raw_ * 4.0f; }
     float    getOpcI()         const { return opc_i_raw_ * 4.0f; }
     float    getPumpI()        const { return pump_i_raw_ * 4.0f; }
@@ -386,10 +400,17 @@ private:
     uint16_t rs41_pres_raw_      = 0; // x10 mb
     uint16_t rs41_humidity_raw_  = 0; // x100 %
     uint16_t rs41_hsensor_t_raw_ = 0; // (T + 100) x100
-    uint16_t tdlas_mr_avg_raw_   = 0; // x10, provisional (0-102.3)
-    uint16_t tdlas_bkg_raw_      = 0; // x100, provisional (0-40.95)
-    uint8_t  tdlas_peak_raw_     = 0; // x10, provisional (0-25.5)
-    uint16_t tdlas_ratio_raw_    = 0; // x1000, provisional (0-1.023)
+    uint16_t tdlas_mr_avg_raw_   = 0; // x100 (0-655.36)
+    uint16_t tdlas_bkg_raw_      = 0; // x10 (0-409.5)
+    uint8_t  tdlas_peak_raw_     = 0; // x10 (0-25.5)
+    uint16_t tdlas_ratio_raw_    = 0; // x1000 (0-1.023)
+    uint16_t tdlas_max_vmr_raw_  = 0; // x10, 14 bits (0-1638.4)
+    uint8_t  tdlas_laser_t_raw_  = 0; // °C
+    uint8_t  tdlas_idx_          = 0; // 0-15, instrument data value
+    uint16_t tdlas_spec_1_raw_   = 0; // x1000, 12 bits (0-4.095)
+    uint16_t tdlas_spec_2_raw_   = 0; // x1000, 12 bits (0-4.095)
+    uint16_t tdlas_spec_3_raw_   = 0; // x1000, 12 bits (0-4.095)
+    uint16_t tdlas_spec_4_raw_   = 0; // x1000, 12 bits (0-4.095)
     // Current round-robin slot (0-7), advanced via resetRotation()/advanceRotation().
     uint8_t  round_robin_idx_    = 0;
 
@@ -400,12 +421,8 @@ private:
     uint16_t opc_d3000_          = 0;
     uint16_t opc_d5000_          = 0;
     uint16_t opc_d2500_          = 0; // spec "10000nm" slot
-    uint16_t rs41_hdg_raw_       = 0; // degrees x100
+    uint8_t  rs41_hdg_raw_       = 0; // degrees * 256/360
     uint16_t bemf_v_raw_         = 0; // x1000 V
-    uint16_t tdlas_spec_1_raw_   = 0; // raw passthrough, provisional
-    uint16_t tdlas_spec_2_raw_   = 0;
-    uint16_t tdlas_spec_3_raw_   = 0;
-    uint16_t tdlas_spec_4_raw_   = 0;
     uint8_t  tsen_i_raw_         = 0; // mA / 4
     uint8_t  opc_i_raw_          = 0; // mA / 4
     uint8_t  pump_i_raw_         = 0; // mA / 4

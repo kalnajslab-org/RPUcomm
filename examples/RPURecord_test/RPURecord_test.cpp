@@ -12,7 +12,7 @@ void setUp(void) {}
 void tearDown(void) {}
 
 void test_record_size_constant() {
-    TEST_ASSERT_EQUAL_UINT32(38, RPU_RECORD_BYTES);
+    TEST_ASSERT_EQUAL_UINT32(48, RPU_RECORD_BYTES);
 }
 
 void test_buffer_too_small() {
@@ -43,6 +43,13 @@ void test_fast_field_roundtrip() {
     rec.setTdlasBkg(20.0f);
     rec.setTdlasPeak(12.0f);
     rec.setTdlasRatio(0.5f);
+    rec.setTdlasMaxVmr(123.4f);
+    rec.setTdlasLaserT(42.0f);
+    rec.setTdlasIdx(11);
+    rec.setTdlasSpec1(1.234f);
+    rec.setTdlasSpec2(2.345f);
+    rec.setTdlasSpec3(0.001f);
+    rec.setTdlasSpec4(4.094f);
 
     uint8_t buf[RPU_RECORD_BYTES];
     TEST_ASSERT_TRUE(rec.encode(buf, sizeof(buf)));
@@ -65,10 +72,17 @@ void test_fast_field_roundtrip() {
     TEST_ASSERT_FLOAT_WITHIN(0.05f, 987.6f, decoded.getRs41Pres());
     TEST_ASSERT_FLOAT_WITHIN(0.005f, 55.55f, decoded.getRs41Humidity());
     TEST_ASSERT_FLOAT_WITHIN(0.005f, 10.0f, decoded.getRs41HSensorT());
-    TEST_ASSERT_FLOAT_WITHIN(0.05f, 50.0f, decoded.getTdlasMrAvg());
-    TEST_ASSERT_FLOAT_WITHIN(0.005f, 20.0f, decoded.getTdlasBkg());
-    TEST_ASSERT_FLOAT_WITHIN(0.05f, 12.0f, decoded.getTdlasPeak());
-    TEST_ASSERT_FLOAT_WITHIN(0.0005f, 0.5f, decoded.getTdlasRatio());
+    TEST_ASSERT_FLOAT_WITHIN(0.005f, 50.0f,  decoded.getTdlasMrAvg());
+    TEST_ASSERT_FLOAT_WITHIN(0.05f,  20.0f,  decoded.getTdlasBkg());
+    TEST_ASSERT_FLOAT_WITHIN(0.05f,  12.0f,  decoded.getTdlasPeak());
+    TEST_ASSERT_FLOAT_WITHIN(0.0005f, 0.5f,  decoded.getTdlasRatio());
+    TEST_ASSERT_FLOAT_WITHIN(0.05f,  123.4f, decoded.getTdlasMaxVmr());
+    TEST_ASSERT_FLOAT_WITHIN(0.5f,    42.0f,  decoded.getTdlasLaserT());
+    TEST_ASSERT_EQUAL_UINT8(11,               decoded.getTdlasIdx());
+    TEST_ASSERT_FLOAT_WITHIN(0.0005f, 1.234f, decoded.getTdlasSpec1());
+    TEST_ASSERT_FLOAT_WITHIN(0.0005f, 2.345f, decoded.getTdlasSpec2());
+    TEST_ASSERT_FLOAT_WITHIN(0.0005f, 0.001f, decoded.getTdlasSpec3());
+    TEST_ASSERT_FLOAT_WITHIN(0.0005f, 4.094f, decoded.getTdlasSpec4());
 }
 
 // Sets every slow/round-robin field to a fixed test value, regardless of which
@@ -82,10 +96,6 @@ void set_all_slow_fields(RPURecord &rec) {
     rec.setOpcD5000(600);
     rec.setRs41Hdg(123.0f);
     rec.setBemfV(3.3f);
-    rec.setTdlasSpec1(1111);
-    rec.setTdlasSpec2(2222);
-    rec.setTdlasSpec3(3333);
-    rec.setTdlasSpec4(4444);
     rec.setTsenI(40);
     rec.setOpcI(80);
     rec.setPumpI(120);
@@ -107,32 +117,28 @@ void check_slot_fields(uint8_t slot, const RPURecord &decoded) {
     TEST_ASSERT_EQUAL_UINT16(slot == 1 ? 400 : 0, decoded.getOpcD2500());
     TEST_ASSERT_EQUAL_UINT16(slot == 2 ? 500 : 0, decoded.getOpcD3000());
     TEST_ASSERT_EQUAL_UINT16(slot == 2 ? 600 : 0, decoded.getOpcD5000());
-    TEST_ASSERT_FLOAT_WITHIN(0.01f, slot == 3 ? 123.0f : 0.0f, decoded.getRs41Hdg());
-    TEST_ASSERT_FLOAT_WITHIN(0.001f, slot == 3 ? 3.3f : 0.0f, decoded.getBemfV());
-    TEST_ASSERT_EQUAL_FLOAT(slot == 4 ? 1111.0f : 0.0f, decoded.getTdlasSpec1());
-    TEST_ASSERT_EQUAL_FLOAT(slot == 4 ? 2222.0f : 0.0f, decoded.getTdlasSpec2());
-    TEST_ASSERT_EQUAL_FLOAT(slot == 5 ? 3333.0f : 0.0f, decoded.getTdlasSpec3());
-    TEST_ASSERT_EQUAL_FLOAT(slot == 5 ? 4444.0f : 0.0f, decoded.getTdlasSpec4());
-    TEST_ASSERT_FLOAT_WITHIN(0.001f, slot == 6 ? 40.0f : 0.0f, decoded.getTsenI());
-    TEST_ASSERT_FLOAT_WITHIN(0.001f, slot == 6 ? 80.0f : 0.0f, decoded.getOpcI());
-    TEST_ASSERT_FLOAT_WITHIN(0.001f, slot == 6 ? 120.0f : 0.0f, decoded.getPumpI());
-    TEST_ASSERT_FLOAT_WITHIN(0.001f, slot == 6 ? 160.0f : 0.0f, decoded.getTdlasI());
-    TEST_ASSERT_FLOAT_WITHIN(0.001f, slot == 6 ? 3.0f : 0.0f, decoded.getV5V());
-    TEST_ASSERT_FLOAT_WITHIN(0.001f, slot == 7 ? 20.0f : -100.0f, decoded.getBatT());
-    TEST_ASSERT_FLOAT_WITHIN(0.001f, slot == 7 ? 25.0f : -100.0f, decoded.getPumpT());
-    TEST_ASSERT_FLOAT_WITHIN(0.001f, slot == 7 ? 30.0f : -100.0f, decoded.getPcbT());
-    TEST_ASSERT_FLOAT_WITHIN(0.005f, slot == 7 ? 12.34f : 0.0f, decoded.getBatV());
-    TEST_ASSERT_EQUAL_UINT8(slot == 7 ? 5 : 0, decoded.getHeaterStat());
+    TEST_ASSERT_FLOAT_WITHIN(1.0f,   slot == 3 ? 123.0f : 0.0f,   decoded.getRs41Hdg());
+    TEST_ASSERT_FLOAT_WITHIN(0.001f, slot == 3 ? 3.3f   : 0.0f,   decoded.getBemfV());
+    TEST_ASSERT_FLOAT_WITHIN(0.001f, slot == 4 ? 40.0f  : 0.0f,   decoded.getTsenI());
+    TEST_ASSERT_FLOAT_WITHIN(0.001f, slot == 4 ? 80.0f  : 0.0f,   decoded.getOpcI());
+    TEST_ASSERT_FLOAT_WITHIN(0.001f, slot == 4 ? 120.0f : 0.0f,   decoded.getPumpI());
+    TEST_ASSERT_FLOAT_WITHIN(0.001f, slot == 4 ? 160.0f : 0.0f,   decoded.getTdlasI());
+    TEST_ASSERT_FLOAT_WITHIN(0.001f, slot == 4 ? 3.0f   : 0.0f,   decoded.getV5V());
+    TEST_ASSERT_FLOAT_WITHIN(0.001f, slot == 5 ? 20.0f  : -100.0f, decoded.getBatT());
+    TEST_ASSERT_FLOAT_WITHIN(0.001f, slot == 5 ? 25.0f  : -100.0f, decoded.getPumpT());
+    TEST_ASSERT_FLOAT_WITHIN(0.001f, slot == 5 ? 30.0f  : -100.0f, decoded.getPcbT());
+    TEST_ASSERT_FLOAT_WITHIN(0.005f, slot == 5 ? 12.34f : 0.0f,   decoded.getBatV());
+    TEST_ASSERT_EQUAL_UINT8(slot == 5 ? 5 : 0,                     decoded.getHeaterStat());
 }
 
 void test_round_robin_slots() {
     RPURecord rec;
     rec.resetRotation();
 
-    // 9 iterations: one per slot (0-7), plus one extra to confirm the
-    // rotation wraps back around to slot 0 after slot 7.
-    for (uint8_t i = 0; i < 9; ++i) {
-        uint8_t slot = i % 8;
+    // 7 iterations: one per slot (0-5), plus one extra to confirm the
+    // rotation wraps back around to slot 0 after slot 5.
+    for (uint8_t i = 0; i < 7; ++i) {
+        uint8_t slot = i % 6;
 
         set_all_slow_fields(rec);
 

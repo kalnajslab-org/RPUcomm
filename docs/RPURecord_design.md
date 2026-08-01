@@ -5,11 +5,9 @@ This document records the design discussion and scaling decisions behind the
 
 ## Goal
 
-`RPURecord` bit-packs one `tickMeasure()` sample into a **fixed 38-byte
-(304-bit) record**, matching the "Profiler TM Format 2026" spec
-(`docs/Profiler TM Format 2026.xlsx`): 5000 records per profile x 38 bytes =
-190,000 bytes, exactly the spec's target. This is
-`RPU_RPT_VERSION = 1`, the first released `RPURecord` wire format.
+`RPURecord` bit-packs one `tickMeasure()` sample into a **fixed 48-byte
+(384-bit) record**. This is `RPU_RPT_VERSION = 1`, the first released wire
+format.
 
 It follows the same pattern as `RPUPacket`:
 
@@ -23,32 +21,33 @@ It follows the same pattern as `RPUPacket`:
 ### Why this layout (and not the earlier 134-byte draft)
 
 An earlier draft packed every value gathered in `tickMeasure()`, including
-several raw `float32` TDLAS fields and RS41 housekeeping fields that the 2026
-spec doesn't carry at full rate, into 134 bytes/record. At 5000 records that
-would be 670,000 bytes/profile — too large. That draft was never released, so
-this design supersedes it directly as `RPU_RPT_VERSION = 1`, trimming the
-per-record payload to 38 bytes by:
+several raw `float32` TDLAS fields and RS41 housekeeping fields, into 134
+bytes/record. At 5000 records that would be 670,000 bytes/profile — too large.
+The current design trims the per-record payload to 48 bytes by:
 
 - dropping fields the spec doesn't carry at all (RS41 `valid`, internal temp,
   module status/error, pcb supply V, lsm303 temp, pcb heater flag, frame
   count; absolute lat/lon; board ID; `pump.pwm`; `ROPC_time`; OPC alarm)
 - replacing absolute GPS lat/lon with small **deltas from a session-start
-  reference**
+  reference** (absolute reference transmitted once per block in a block header)
 - splitting fields into a **fast group** (period = 1, present every record)
-  and a **slow/round-robin group** (period = 8, one field-pair "slot" per
-  record, cycling through 8 slots so each slow field is sent roughly every 8
+  and a **slow/round-robin group** (period = 6, one field-pair "slot" per
+  record, cycling through 6 slots so each slow field is sent roughly every 6
   records)
-- replacing raw `float32` TDLAS fields with provisional fixed-point scales
+- replacing raw `float32` TDLAS fields with fixed-point scales
+- transmitting all four TDLAS spectra channels as fast fields every record;
+  `tdlas_idx` is an instrument data value (not a selector) transmitted alongside
 
 ## Field groups
 
-### Fast fields (period = 1, 260 bits/record)
+### Fast fields (period = 1, 344 bits/record including version)
 
 Present in every record, in this order:
 
 | # | Field | Setter / Getter | Encoding | Bits |
 |---|---|---|---|---|
-| 1 | round-robin index | managed internally (see "Round-robin cycling") | 0–7, selects which slow-field slot follows | 4 |
+| — | record format version | encoded internally | fixed value `RPU_RPT_VERSION = 1` | 4 |
+| 1 | round-robin index | managed internally (see "Round-robin cycling") | 0–5, selects which slow-field slot follows | 4 |
 | 2 | elapsed time | `setElapsedS`/`getElapsedS` | seconds since `MeasureStartMillis`, raw uint16 (0–65535 s) | 16 |
 | 3 | GPS altitude | `setAlt`/`getAlt` | meters, raw uint16 | 16 |
 | 4 | GPS latitude delta | `setLatDelta`/`getLatDelta` | `(lat - GPSStartLat) x50000`, signed int16 (±0.65534°, ~2.2 m res at equator) | 16 |
@@ -64,60 +63,64 @@ Present in every record, in this order:
 | 14 | RS41 pressure | `setRs41Pres`/`getRs41Pres` | `x10`, 0–6553.5 mb | 16 |
 | 15 | RS41 RH | `setRs41Humidity`/`getRs41Humidity` | `x100`, 0–655.35 % | 16 |
 | 16 | RS41 temp-of-RH | `setRs41HSensorT`/`getRs41HSensorT` | `(T+100) x100`, -100.00 to 555.35 °C | 16 |
-| 17 | TDLAS VMR_ave | `setTdlasMrAvg`/`getTdlasMrAvg` | `x10`, 0–102.3 (provisional, see TDLAS section) | 10 |
-| 18 | TDLAS bkg | `setTdlasBkg`/`getTdlasBkg` | `x100`, 0–40.95 (provisional) | 12 |
+| 17 | TDLAS VMR_ave | `setTdlasMrAvg`/`getTdlasMrAvg` | `x100`, 0–655.36 (provisional) | 16 |
+| 18 | TDLAS bkg | `setTdlasBkg`/`getTdlasBkg` | `x10`, 0–409.5 (provisional) | 12 |
 | 19 | TDLAS peak | `setTdlasPeak`/`getTdlasPeak` | `x10`, 0–25.5 (provisional) | 8 |
 | 20 | TDLAS ratio | `setTdlasRatio`/`getTdlasRatio` | `x1000`, 0–1.023 (provisional) | 10 |
+| 21 | TDLAS max VMR | `setTdlasMaxVmr`/`getTdlasMaxVmr` | `x10`, 0–1638.4 (provisional) | 14 |
+| 22 | TDLAS laser temperature | `setTdlasLaserT`/`getTdlasLaserT` | °C, integer 0–255 | 8 |
+| 23 | TDLAS spectra channel 1 | `setTdlasSpec1`/`getTdlasSpec1` | `x1000`, 0–4.095 (provisional) | 12 |
+| 24 | TDLAS spectra channel 2 | `setTdlasSpec2`/`getTdlasSpec2` | `x1000`, 0–4.095 (provisional) | 12 |
+| 25 | TDLAS spectra channel 3 | `setTdlasSpec3`/`getTdlasSpec3` | `x1000`, 0–4.095 (provisional) | 12 |
+| 26 | TDLAS spectra channel 4 | `setTdlasSpec4`/`getTdlasSpec4` | `x1000`, 0–4.095 (provisional) | 12 |
+| 27 | TDLAS spectra index | `setTdlasIdx`/`getTdlasIdx` | 0–15, instrument data value | 4 |
 
-13 fields x 16 bits (208) + 3 fields x 4 bits (12) + 2 fields x 10 bits (20) +
-1 field x 12 bits (12) + 1 field x 8 bits (8) = **260 bits**.
+Bit tally:
+- version (4) + rr_idx (4) + fields 2–16 (13 × 16 = 208) + sats/age (2 × 4 = 8)
+  + vmr (16) + bkg (12) + peak (8) + ratio (10) + max_vmr (14) + laser_t (8)
+  + spec1–4 (4 × 12 = 48) + idx (4) = **344 bits**.
 
-### Slow / round-robin fields (period = 8, one 40-bit slot/record)
+Total TDLAS fast bits: 16+12+8+10+14+8+12+12+12+12+4 = **120 bits**.
 
-22 fields total, sent one pair (or group) at a time via the round-robin
-index. Every `RPURecord` setter is called every tick (so the in-memory object
-always holds the latest reading of all 22 fields), but `encode()` only
-serialises the 40-bit slot selected by `round_robin_idx_`; `decode()` only
-populates that same slot, leaving the other slow members at their default
-(zero) values.
+### Slow / round-robin fields (period = 6, one 40-bit slot/record)
+
+17 fields total, sent one group at a time via the round-robin index. Every
+`RPURecord` setter is called every tick (so the in-memory object always holds
+the latest reading of all fields), but `encode()` only serialises the 40-bit
+slot selected by `round_robin_idx_`; `decode()` only populates that same slot,
+leaving the other slow members at their default (zero) values.
 
 | Index | Slot contents | Bits | Setters / Getters |
 |---|---|---|---|
 | 0 | ROPC 500nm (16) + ROPC 700nm (16) + pad (8) | 40 | `setOpcD500`/`setOpcD700` |
 | 1 | ROPC 1000nm (16) + ROPC 2500nm (16) + pad (8) | 40 | `setOpcD1000`/`setOpcD2500` |
 | 2 | ROPC 3000nm (16) + ROPC 5000nm (16) + pad (8) | 40 | `setOpcD3000`/`setOpcD5000` |
-| 3 | RS41 magnetometer X-Y (16) + pump BEMF (16) + pad (8) | 40 | `setRs41MagXY`/`setBemfV` |
-| 4 | TDLAS spectra 1 (16) + TDLAS spectra 2 (16) + pad (8) | 40 | `setTdlasSpec1`/`setTdlasSpec2` |
-| 5 | TDLAS spectra 3 (16) + TDLAS spectra 4 (16) + pad (8) | 40 | `setTdlasSpec3`/`setTdlasSpec4` |
-| 6 | I_TSEN (8) + I_ROPC (8) + I_PUMP (8) + I_TDLAS (8) + V_5V (8) | 40 | `setTsenI`/`setOpcI`/`setPumpI`/`setTdlasI`/`setV5V` |
-| 7 | T_Batt (8) + T_Pump (8) + T_PCB (8) + V_Batt (12) + Heater_stat (4) | 40 | `setBatT`/`setPumpT`/`setPcbT`/`setBatV`/`setHeaterStat` |
+| 3 | RS41 heading (16) + pump BEMF (16) + pad (8) | 40 | `setRs41Hdg`/`setBemfV` |
+| 4 | I_TSEN (8) + I_ROPC (8) + I_PUMP (8) + I_TDLAS (8) + V_5V (8) | 40 | `setTsenI`/`setOpcI`/`setPumpI`/`setTdlasI`/`setV5V` |
+| 5 | T_Batt (8) + T_Pump (8) + T_PCB (8) + V_Batt (12) + Heater_stat (4) | 40 | `setBatT`/`setPumpT`/`setPcbT`/`setBatV`/`setHeaterStat` |
 
-Six slots are two 16-bit fields + 8 bits of padding (32+8=40); the last two
-slots are five fields each that sum to exactly 40 bits with no padding.
-12 x 16-bit fields + 10 fields totalling 80 bits = **272 bits** across the 8
-possible slots — but only one slot (40 bits) is actually transmitted per
-record.
+Slots 0–3 are two 16-bit fields + 8 bits of padding (32+8=40); slots 4–5 are
+five fields each that sum to exactly 40 bits with no padding.
 
 ### TDLAS scaling (provisional)
 
-`TDLASData` (`RPUTDLAS.h`) and `RPUtest.cpp` agree on the available TDLAS
-fields: `mr_avg`, `bkg`, `peak`, `ratio`, `batt`, `therm_1`, `therm_2`, `indx`,
-`spec_1`-`spec_4`. None of these have documented physical ranges. The spec's
-"VMR_min" field has **no corresponding source field** in the current TDLAS
-firmware at all, and is not carried by `RPURecord` (its 10 bits were dropped
-from the spec layout entirely, shrinking the record from 40 to 38 bytes).
+All TDLAS fields are fast (period = 1, present in every record). The four
+spectra channels are sent in full every record; `tdlas_idx` is a data value
+from the instrument (not a mux selector), transmitted alongside them.
 
-Decisions:
+| Field | Scale | Bit width | Range |
+|---|---|---|---|
+| VMR_ave | ×100 | 16 | 0–655.36 |
+| bkg | ×10 | 12 | 0–409.5 |
+| peak | ×10 | 8 | 0–25.5 |
+| ratio | ×1000 | 10 | 0–1.023 |
+| max VMR | ×10 | 14 | 0–1638.4 |
+| laser temp | 1 °C | 8 | 0–255 °C |
+| spec 1–4 | ×1000 | 12 each | 0–4.095 |
+| idx | — | 4 | 0–15 |
 
-- `VMR_ave`/`bkg`/`peak`/`ratio` get provisional fixed-point scales (x10,
-  x100, x10, x1000 respectively) chosen to give a plausible range with the
-  spec's bit widths (10/12/8/10 bits). These are **TBD placeholders** —
-  revisit once real TDLAS data ranges are characterized.
-- `spec_1`-`spec_4` are packed as a **raw 16-bit passthrough** (`(uint16_t)`
-  cast of the `float` value, clamped 0–65535) — also provisional, pending a
-  real scale.
-- `batt`, `therm_1`, `therm_2`, `indx` from `TDLASData` are **not** carried —
-  the spec's slow-field list doesn't include them.
+Scales are provisional placeholders pending characterization of real instrument
+data ranges.
 
 ### GPS delta encoding
 
@@ -132,10 +135,9 @@ point rather than absolute lat/lon, to fit in 16 bits each:
   `lon_delta` likewise — both signed int16, range ±0.65534° (~±72 km lat,
   less in lon depending on latitude), 1/50000° (~2.2 m) resolution.
 
-Reconstructing absolute lat/lon from `(GPSStartLat/Lon, lat_delta, lon_delta)`
-is a ground-station/RATCHuTS concern — `RPUStartLat`/`RPUStartLon` must be
-transmitted separately (e.g. once per profile in a header record), which is
-**out of scope for `RPURecord` itself** and is a known follow-up.
+Reconstructing absolute lat/lon from per-record deltas requires the reference
+point `(GPSStartLat, GPSStartLon)`, which is transmitted once per block in the
+block header (see "Block header" below).
 
 ### TSEN raw values
 
@@ -144,32 +146,70 @@ transmitted separately (e.g. once per profile in a header record), which is
 bits per TSEN field, so `setTsenPres`/`setTsenPtemp` keep the **top 16 bits**
 of the 24-bit count (`raw >> 8`), discarding the bottom 8 bits of precision.
 
+## Block header
+
+A block header is prepended to every group of `RPURecord`s before transmission.
+It contains the GPS reference data needed to reconstruct absolute position and
+UTC time from the per-record deltas and elapsed seconds.
+
+**Size:** `RPU_BLOCK_HDR_BYTES = 12` bytes (96 bits).
+
+**Wire format** (big-endian, in order):
+
+| Field | Type | Bits | Notes |
+|---|---|---|---|
+| `epoch_time` | uint32 | 32 | Unix UTC epoch seconds, captured at GPS-start-capture via `mktime()` |
+| `gps_lat` | int32 | 32 | Latitude × 1 000 000, i.e. degrees × 1e6, signed |
+| `gps_lon` | int32 | 32 | Longitude × 1 000 000, i.e. degrees × 1e6, signed |
+
+These three values are stored as non-bit-packed metadata on `RPURecord`
+(`epoch_time_`, `gps_lat_`, `gps_lon_`) and are set once at GPS-start-capture
+in `RPU.cpp`:
+
+```cpp
+rpu_record.setGpsLat(GPSStartLat);
+rpu_record.setGpsLon(GPSStartLon);
+struct tm t = {};
+t.tm_year = profiler_gps.date.year() - 1900;
+t.tm_mon  = profiler_gps.date.month() - 1;
+t.tm_mday = profiler_gps.date.day();
+t.tm_hour = profiler_gps.time.hour();
+t.tm_min  = profiler_gps.time.minute();
+t.tm_sec  = profiler_gps.time.second();
+rpu_record.setEpochTime((uint32_t)mktime(&t));
+```
+
+On Teensy (newlib, no OS timezone), `mktime()` defaults to UTC — no timezone
+adjustment is needed. `sendRPURecords()` calls `encodeBlockHeader()` once before
+transmitting the batch of records, prepending 12 bytes to the `tm_buf`.
+
 ## Round-robin cycling
 
-The round-robin slot index (0–7) is managed internally by `RPURecord` via a
+The round-robin slot index (0–5) is managed internally by `RPURecord` via a
 shared rotation counter — callers never see or set its value directly:
 
 - `RPURecord::resetRotation()` resets the rotation to slot 0. `RPU.cpp` calls
   this once per MEASURE session, in `enterMeasure()`.
 - Each `RPURecord` constructor captures the current rotation slot at
   construction time.
-- `RPURecord::advanceRotation()` advances the rotation (mod 8) to the next
+- `RPURecord::advanceRotation()` advances the rotation (mod 6) to the next
   slot. `RPU.cpp` calls this once per `tickMeasure()`, after the record has
   been encoded/pushed.
 
-Every tick, *all* 22 slow-field setters are called with the latest readings
-(so the in-memory `RPURecord` is always fully populated), but `encode()` only
-transmits the 40-bit slot for the record's captured round-robin index. Over 8
-consecutive records, all 22 slow fields are eventually transmitted once.
+Every tick, *all* slow-field setters are called with the latest readings (so
+the in-memory `RPURecord` is always fully populated), but `encode()` only
+transmits the 40-bit slot for the record's captured round-robin index. Over 6
+consecutive records, all 17 slow fields are eventually transmitted once.
 
 ## Final bit layout / packet size
 
-Total payload: 4 (version) + 260 (fast fields) + 40 (one round-robin slot)
-= **304 bits = 38 bytes** (`RPU_RECORD_BYTES`), no padding needed.
+Total per-record payload: 344 (fast, including version) + 40 (one round-robin
+slot) = **384 bits = 48 bytes** (`RPU_RECORD_BYTES`), no padding needed.
 
 | Constant | Bits | Used for |
 |---|---|---|
-| `RPU_RPT_VER_BITS` | 4 | packet format version (`RPU_RPT_VERSION = 1`) |
+| `RPU_RPT_VER_BITS` | 4 | record format version (`RPU_RPT_VERSION = 1`) |
+| `RPU_RPT_RR_IDX_BITS` | 4 | round-robin slot index (0–5) |
 | `RPU_RPT_ELAPSED_BITS` | 16 | elapsed seconds since `MeasureStartMillis` |
 | `RPU_RPT_ALT_BITS` | 16 | altitude, m, raw |
 | `RPU_RPT_GPS_DELTA_BITS` | 16 | `(lat\|lon - start) x50000`, signed |
@@ -180,28 +220,29 @@ Total payload: 4 (version) + 260 (fast fields) + 40 (one round-robin slot)
 | `RPU_RPT_RS41_T_BITS` | 16 | `(T+100) x100` (-100.00 to 555.35 °C) |
 | `RPU_RPT_RS41_P_BITS` | 16 | pressure `x10` (0–6553.5 mb) |
 | `RPU_RPT_RS41_RH_BITS` | 16 | RH `x100` (0–655.35 %) |
-| `RPU_RPT_TDLAS_VMR_BITS` | 10 | TDLAS VMR_ave `x10`, provisional (0–102.3) |
-| `RPU_RPT_TDLAS_BKG_BITS` | 12 | TDLAS bkg `x100`, provisional (0–40.95) |
+| `RPU_RPT_TDLAS_VMR_BITS` | 16 | TDLAS VMR_ave `x100`, provisional (0–655.36) |
+| `RPU_RPT_TDLAS_BKG_BITS` | 12 | TDLAS bkg `x10`, provisional (0–409.5) |
 | `RPU_RPT_TDLAS_PEAK_BITS` | 8 | TDLAS peak `x10`, provisional (0–25.5) |
 | `RPU_RPT_TDLAS_RATIO_BITS` | 10 | TDLAS ratio `x1000`, provisional (0–1.023) |
-| `RPU_RPT_RR_IDX_BITS` | 4 | round-robin slot index (0–7) |
-| `RPU_RPT_MAGXY_BITS` | 16 | RS41 magnetometer X-Y, counts + 1000 |
+| `RPU_RPT_TDLAS_MAX_VMR_BITS` | 14 | TDLAS max VMR `x10`, provisional (0–1638.4) |
+| `RPU_RPT_TDLAS_LASER_T_BITS` | 8 | TDLAS laser temperature, °C (0–255) |
+| `RPU_RPT_TDLAS_SPEC_BITS` | 12 | TDLAS spectra value `x1000` per channel, provisional (0–4.095) |
+| `RPU_RPT_TDLAS_INDX_BITS` | 4 | TDLAS spectra index (0–15, instrument data value) |
+| `RPU_RPT_HDG_BITS` | 16 | RS41 heading, degrees `x100` (0–360.00) |
 | `RPU_RPT_BEMF_BITS` | 16 | pump BEMF, V `x1000` |
-| `RPU_RPT_SPEC_BITS` | 16 | TDLAS spectra, raw passthrough, provisional |
 | `RPU_RPT_HKCURR_BITS` | 8 | subsystem currents, mA/4 (0–1020 mA, 4 mA res) |
 | `RPU_RPT_V5V_BITS` | 8 | V `x50` (0–5.10 V, 0.02 V res) |
 | `RPU_RPT_HKTEMP_BITS` | 8 | `(T+100)`, 1 °C res (-100 to 155 °C) |
 | `RPU_RPT_VOLT_BITS` | 12 | battery voltage `x100` (0–40.95 V) |
 | `RPU_RPT_HEATER_BITS` | 4 | heater status (bit0: battery heater on) |
-| `RPU_RPT_SLOT_PAD_BITS` | 8 | padding within the two-field 40-bit slots (indices 0–5) |
+| `RPU_RPT_SLOT_PAD_BITS` | 8 | padding within the two-field 40-bit slots (indices 0–3) |
+| `RPU_RECORD_BYTES` | — | 48 bytes = (344 fast + 40 slow) / 8 |
+| `RPU_BLOCK_HDR_BYTES` | — | 12 bytes = epoch_time (uint32) + gps_lat (int32) + gps_lon (int32) |
 
 ## Open items / not yet done
 
-- `RPUStartLat`/`RPUStartLon`/`RPUStartTime` (the GPS reference point each
-  record's deltas are relative to) must be transmitted separately, e.g. once
-  per profile in a header/status message — not part of `RPURecord`.
-- TDLAS scales (`VMR_ave`, `bkg`, `peak`, `ratio`, `spec_1`-`4`) are
-  placeholders pending real instrument range/resolution data.
+- TDLAS scales (`VMR_ave`, `bkg`, `peak`, `ratio`, `max_vmr`, `spec1`–`4`) are
+  provisional placeholders pending real instrument range/resolution data.
 - The `-Wformat-truncation` warning GCC may emit for `RPURecord::toJSON()` is
   a known false positive — the underlying values are bounded by their bit
   widths, so the worst-case `%f`/`%.*f` buffer size GCC assumes is
