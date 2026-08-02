@@ -61,7 +61,7 @@ Present in every record, in this order:
 | 12 | TSEN temp-of-pressure | `setTsenPtemp`/`getTsenPtemp` | top 16 bits of raw 24-bit count | 16 |
 | 13 | RS41 air temperature | `setRs41AirT`/`getRs41AirT` | `(T+100) x100`, -100.00 to 555.35 °C | 16 |
 | 14 | RS41 pressure | `setRs41Pres`/`getRs41Pres` | `x10`, 0–6553.5 mb | 16 |
-| 15 | RS41 RH | `setRs41Humidity`/`getRs41Humidity` | `x100`, 0–655.35 % | 16 |
+| 15 | RS41 RH | `setRs41Humidity`/`getRs41Humidity` | `(RH+20) x100`, -20.00 to +635.35 % | 16 |
 | 16 | RS41 temp-of-RH | `setRs41HSensorT`/`getRs41HSensorT` | `(T+100) x100`, -100.00 to 555.35 °C | 16 |
 | 17 | TDLAS VMR_ave | `setTdlasMrAvg`/`getTdlasMrAvg` | `x100`, 0–655.36 (provisional) | 16 |
 | 18 | TDLAS bkg | `setTdlasBkg`/`getTdlasBkg` | `x10`, 0–409.5 (provisional) | 12 |
@@ -95,13 +95,28 @@ leaving the other slow members at their default (zero) values.
 | 0 | ROPC 500nm (16) + ROPC 700nm (16) + pad (8) | 40 | `setOpcD500`/`setOpcD700` |
 | 1 | ROPC 1000nm (16) + ROPC 2500nm (16) + pad (8) | 40 | `setOpcD1000`/`setOpcD2500` |
 | 2 | ROPC 3000nm (16) + ROPC 5000nm (16) + pad (8) | 40 | `setOpcD3000`/`setOpcD5000` |
-| 3 | RS41 heading (8) + pump BEMF (16) + pad (16) | 40 | `setRs41Hdg`/`setBemfV` |
+| 3 | RS41 heading (8) + pump BEMF (16) + RS41 status flags (8) + pad (8) | 40 | `setRs41Hdg`/`setBemfV`/`setRs41Status` |
 | 4 | I_TSEN (8) + I_ROPC (8) + I_PUMP (8) + I_TDLAS (8) + V_5V (8) | 40 | `setTsenI`/`setOpcI`/`setPumpI`/`setTdlasI`/`setV5V` |
 | 5 | T_Batt (8) + T_Pump (8) + T_PCB (8) + V_Batt (12) + Heater_stat (4) | 40 | `setBatT`/`setPumpT`/`setPcbT`/`setBatV`/`setHeaterStat` |
 
 Slots 0–2 are two 16-bit fields + 8 bits of padding (32+8=40). Slot 3 is an
-8-bit heading + 16-bit BEMF + 16 bits of padding (8+16+16=40). Slots 4–5 are
-five fields each that sum to exactly 40 bits with no padding.
+8-bit heading + 16-bit BEMF + 8-bit RS41 status flags + 8 bits of padding
+(8+16+8+8=40). Slots 4–5 are five fields each that sum to exactly 40 bits with
+no padding.
+
+The RS41 status byte packs eight `RS41StatusFlags_t` boolean fields as bits
+(LSB = bit 0), defined by the `RPU_REC_RS41_*` constants in `RPUcomm.h`:
+
+| Bit | Constant | Flag |
+|-----|----------|------|
+| 0 | `RPU_REC_RS41_HIGH_INTERNAL_TEMP` | S.2: high internal temperature |
+| 1 | `RPU_REC_RS41_REGEN_TEMP_LOW` | S.3: regen temperature low |
+| 2 | `RPU_REC_RS41_PTU_FAILURE` | S.4: PTU failure |
+| 3 | `RPU_REC_RS41_FLASH_FAILURE` | S.5: flash failure |
+| 4 | `RPU_REC_RS41_LOW_INPUT_VOLTAGE` | E.6: low input voltage |
+| 5 | `RPU_REC_RS41_NOT_CALIBRATED` | E.7: not calibrated |
+| 6 | `RPU_REC_RS41_NO_PRESSURE_MODULE` | E.8: no pressure module |
+| 7 | `RPU_REC_RS41_DISCONNECTED_BOOM` | E.9: disconnected boom |
 
 ### TDLAS scaling (provisional)
 
@@ -229,8 +244,9 @@ slot) = **384 bits = 48 bytes** (`RPU_RECORD_BYTES`), no padding needed.
 | `RPU_REC_TDLAS_LASER_T_BITS` | 8 | TDLAS laser temperature, °C (0–255) |
 | `RPU_REC_TDLAS_SPEC_BITS` | 12 | TDLAS spectra value `x1000` per channel, provisional (0–4.095) |
 | `RPU_REC_TDLAS_INDX_BITS` | 4 | TDLAS spectra index (0–15, instrument data value) |
-| `RPU_REC_HDG_BITS` | 16 | RS41 heading, degrees `x100` (0–360.00) |
+| `RPU_REC_HDG_BITS` | 8 | RS41 heading, `x256/360` (0–255, ~1.41° res) |
 | `RPU_REC_BEMF_BITS` | 16 | pump BEMF, V `x1000` |
+| `RPU_REC_RS41_STATUS_BITS` | 8 | RS41 status flags byte (8 flags, see slot 3 table) |
 | `RPU_REC_HKCURR_BITS` | 8 | subsystem currents, mA/4 (0–1020 mA, 4 mA res) |
 | `RPU_REC_V5V_BITS` | 8 | V `x50` (0–5.10 V, 0.02 V res) |
 | `RPU_REC_HKTEMP_BITS` | 8 | `(T+100)`, 1 °C res (-100 to 155 °C) |

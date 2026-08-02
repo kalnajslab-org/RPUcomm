@@ -288,7 +288,7 @@ void RPURecord::setTsenPres(uint32_t raw)      { tsen_pres_raw_  = (uint16_t)(co
 void RPURecord::setTsenPtemp(uint32_t raw)     { tsen_ptemp_raw_ = (uint16_t)(constrain((long)raw, 0L, 0xFFFFFFL) >> 8); }
 void RPURecord::setRs41AirT(float celsius)     { rs41_air_t_raw_     = (uint16_t)constrain((int)((celsius + 100.0f) * 100.0f), 0, 65535); }
 void RPURecord::setRs41Pres(float millibar)    { rs41_pres_raw_      = (uint16_t)constrain((int)(millibar * 10.0f), 0, 65535); }
-void RPURecord::setRs41Humidity(float percent) { rs41_humidity_raw_  = (uint16_t)constrain((int)(percent * 100.0f), 0, 65535); }
+void RPURecord::setRs41Humidity(float percent) { rs41_humidity_raw_  = (uint16_t)constrain((int)((percent + 20.0f) * 100.0f), 0, 65535); }
 void RPURecord::setRs41HSensorT(float celsius) { rs41_hsensor_t_raw_ = (uint16_t)constrain((int)((celsius + 100.0f) * 100.0f), 0, 65535); }
 void RPURecord::setTdlasMrAvg(float value)     { tdlas_mr_avg_raw_  = (uint16_t)constrain((int)(value * 100.0f), 0, 65535); }
 void RPURecord::setTdlasBkg(float value)       { tdlas_bkg_raw_     = (uint16_t)constrain((int)(value * 10.0f), 0, 4095); }
@@ -310,7 +310,8 @@ void RPURecord::setOpcD3000(uint16_t count)    { opc_d3000_ = count; }
 void RPURecord::setOpcD5000(uint16_t count)    { opc_d5000_ = count; }
 void RPURecord::setOpcD2500(uint16_t count)    { opc_d2500_ = count; }
 void RPURecord::setRs41Hdg(float degrees)      { rs41_hdg_raw_ = (uint8_t)constrain((int)(degrees * 256.0f / 360.0f + 0.5f), 0, 255); }
-void RPURecord::setBemfV(float volts)          { bemf_v_raw_      = (uint16_t)constrain((int)(volts * 1000.0f), 0, 65535); }
+void RPURecord::setBemfV(float volts)          { bemf_v_raw_   = (uint16_t)constrain((int)(volts * 1000.0f), 0, 65535); }
+void RPURecord::setRs41Status(uint8_t flags)   { rs41_status_  = flags; }
 void RPURecord::setTsenI(float milliamps)      { tsen_i_raw_  = (uint8_t)constrain((int)(milliamps / 4.0f), 0, 255); }
 void RPURecord::setOpcI(float milliamps)       { opc_i_raw_   = (uint8_t)constrain((int)(milliamps / 4.0f), 0, 255); }
 void RPURecord::setPumpI(float milliamps)      { pump_i_raw_  = (uint8_t)constrain((int)(milliamps / 4.0f), 0, 255); }
@@ -380,8 +381,8 @@ bool RPURecord::encode(uint8_t * buf, size_t buf_size) const
         case 3:
             bsw.write_unchecked<uint8_t> (rs41_hdg_raw_, RPU_REC_HDG_BITS);
             bsw.write_unchecked<uint16_t>(bemf_v_raw_,   RPU_REC_BEMF_BITS);
-            bsw.write_unchecked<uint8_t> (0, RPU_REC_SLOT_PAD_BITS);
-            bsw.write_unchecked<uint8_t> (0, RPU_REC_SLOT_PAD_BITS);
+            bsw.write_unchecked<uint8_t> (rs41_status_,  RPU_REC_RS41_STATUS_BITS);
+            bsw.write_unchecked<uint8_t> (0,             RPU_REC_SLOT_PAD_BITS);
             break;
         case 4:
             bsw.write_unchecked<uint8_t>(tsen_i_raw_,  RPU_REC_HKCURR_BITS);
@@ -459,7 +460,7 @@ bool RPURecord::decode(const uint8_t * buf, size_t buf_size)
         case 3:
             rs41_hdg_raw_ = bsr.read_unchecked<uint8_t> (RPU_REC_HDG_BITS);
             bemf_v_raw_   = bsr.read_unchecked<uint16_t>(RPU_REC_BEMF_BITS);
-            bsr.read_unchecked<uint8_t>(RPU_REC_SLOT_PAD_BITS);
+            rs41_status_  = bsr.read_unchecked<uint8_t> (RPU_REC_RS41_STATUS_BITS);
             bsr.read_unchecked<uint8_t>(RPU_REC_SLOT_PAD_BITS);
             break;
         case 4:

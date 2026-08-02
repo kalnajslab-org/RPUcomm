@@ -209,7 +209,7 @@ constexpr uint8_t  RPU_REC_TSEN_BITS            = 16; // TSEN raw counts (airt: 
 
 constexpr uint8_t  RPU_REC_RS41_T_BITS          = 16; // (T + 100) x100  (-100.00 to 555.35 °C)
 constexpr uint8_t  RPU_REC_RS41_P_BITS          = 16; // pressure x10    (0–6553.5 mb)
-constexpr uint8_t  RPU_REC_RS41_RH_BITS         = 16; // RH x100         (0–655.35 %)
+constexpr uint8_t  RPU_REC_RS41_RH_BITS         = 16; // (RH + 20) x100  (-20.00 to +635.35 %)
 
 constexpr uint8_t  RPU_REC_TDLAS_VMR_BITS       = 16; // TDLAS VMR_ave x100 (0–655.36)
 constexpr uint8_t  RPU_REC_TDLAS_BKG_BITS       = 12; // TDLAS bkg x10 (0–409.5)
@@ -228,6 +228,16 @@ constexpr uint8_t  RPU_REC_V5V_BITS        = 8;  // V x50  (0–5.10 V, 0.02 V r
 constexpr uint8_t  RPU_REC_HKTEMP_BITS     = 8;  // (T + 100), 1 °C res (-100 to 155 °C)
 constexpr uint8_t  RPU_REC_VOLT_BITS       = 12; // battery voltage x100 (0–40.95 V)
 constexpr uint8_t  RPU_REC_HEATER_BITS     = 4;  // heater status (bit0: battery heater on)
+constexpr uint8_t  RPU_REC_RS41_STATUS_BITS = 8;  // RS41 status flags byte (8 flags packed as bits)
+// Bit definitions for the RS41 status byte (matches RS41StatusFlags_t field order):
+constexpr uint8_t  RPU_REC_RS41_HIGH_INTERNAL_TEMP  = (1u << 0); // S.2: high internal temperature
+constexpr uint8_t  RPU_REC_RS41_REGEN_TEMP_LOW      = (1u << 1); // S.3: regen temperature low
+constexpr uint8_t  RPU_REC_RS41_PTU_FAILURE         = (1u << 2); // S.4: PTU failure
+constexpr uint8_t  RPU_REC_RS41_FLASH_FAILURE       = (1u << 3); // S.5: flash failure
+constexpr uint8_t  RPU_REC_RS41_LOW_INPUT_VOLTAGE   = (1u << 4); // E.6: low input voltage
+constexpr uint8_t  RPU_REC_RS41_NOT_CALIBRATED      = (1u << 5); // E.7: not calibrated
+constexpr uint8_t  RPU_REC_RS41_NO_PRESSURE_MODULE  = (1u << 6); // E.8: no pressure module
+constexpr uint8_t  RPU_REC_RS41_DISCONNECTED_BOOM   = (1u << 7); // E.9: disconnected boom
 constexpr uint8_t  RPU_REC_SLOT_PAD_BITS   = 8;  // padding within the two-field 40-bit slots (indices 0-3)
 constexpr size_t   RPU_REC_SLOT_BITS       = 40; // fixed round-robin slot size
 
@@ -294,6 +304,7 @@ public:
     void setOpcD2500(uint16_t count);   // spec "10000nm" slot; ROPCData has no 10000nm channel
     void setRs41Hdg(float degrees);
     void setBemfV(float volts);
+    void setRs41Status(uint8_t flags);  // 8 flags packed as bits (see RS41StatusFlags_t)
     void setTsenI(float milliamps);
     void setOpcI(float milliamps);
     void setPumpI(float milliamps);
@@ -321,7 +332,7 @@ public:
     uint16_t getTsenPtemp()    const { return tsen_ptemp_raw_; }
     float    getRs41AirT()     const { return (rs41_air_t_raw_ / 100.0f) - 100.0f; }
     float    getRs41Pres()     const { return rs41_pres_raw_ / 10.0f; }
-    float    getRs41Humidity() const { return rs41_humidity_raw_ / 100.0f; }
+    float    getRs41Humidity() const { return (rs41_humidity_raw_ / 100.0f) - 20.0f; }  // -20.00 to +635.35 %
     float    getRs41HSensorT() const { return (rs41_hsensor_t_raw_ / 100.0f) - 100.0f; }
 
     float    getTdlasMrAvg()   const { return tdlas_mr_avg_raw_ / 100.0f; }
@@ -345,6 +356,7 @@ public:
     uint16_t getOpcD2500()     const { return opc_d2500_; }
     float    getRs41Hdg()      const { return rs41_hdg_raw_ * (360.0f / 256.0f); }
     float    getBemfV()        const { return bemf_v_raw_ / 1000.0f; }
+    uint8_t  getRs41Status()   const { return rs41_status_; }
     float    getTsenI()        const { return tsen_i_raw_ * 4.0f; }
     float    getOpcI()         const { return opc_i_raw_ * 4.0f; }
     float    getPumpI()        const { return pump_i_raw_ * 4.0f; }
@@ -398,7 +410,7 @@ private:
     uint16_t tsen_ptemp_raw_     = 0; // top 16 bits of raw 24-bit count
     uint16_t rs41_air_t_raw_     = 0; // (T + 100) x100
     uint16_t rs41_pres_raw_      = 0; // x10 mb
-    uint16_t rs41_humidity_raw_  = 0; // x100 %
+    uint16_t rs41_humidity_raw_  = 0; // (RH + 20) x100
     uint16_t rs41_hsensor_t_raw_ = 0; // (T + 100) x100
     uint16_t tdlas_mr_avg_raw_   = 0; // x100 (0-655.36)
     uint16_t tdlas_bkg_raw_      = 0; // x10 (0-409.5)
@@ -423,6 +435,7 @@ private:
     uint16_t opc_d2500_          = 0; // spec "10000nm" slot
     uint8_t  rs41_hdg_raw_       = 0; // degrees * 256/360
     uint16_t bemf_v_raw_         = 0; // x1000 V
+    uint8_t  rs41_status_        = 0; // 8 flags packed as bits
     uint8_t  tsen_i_raw_         = 0; // mA / 4
     uint8_t  opc_i_raw_          = 0; // mA / 4
     uint8_t  pump_i_raw_         = 0; // mA / 4
