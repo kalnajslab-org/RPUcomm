@@ -496,7 +496,7 @@ String RPURecord::toJSON() const
         "\"tdlas_spec1\":%.3f,\"tdlas_spec2\":%.3f,\"tdlas_spec3\":%.3f,\"tdlas_spec4\":%.3f,\"tdlas_idx\":%u,"
         "\"round_robin_idx\":%u,"
         "\"opc_d500\":%u,\"opc_d700\":%u,\"opc_d1000\":%u,\"opc_d3000\":%u,\"opc_d5000\":%u,\"opc_d2500\":%u,"
-        "\"rs41_hdg\":%.2f,\"bemf_v\":%.3f,"
+        "\"rs41_hdg\":%.2f,\"bemf_v\":%.3f,\"rs41_status\":%u,"
         "\"tsen_i\":%.0f,\"opc_i\":%.0f,\"pump_i\":%.0f,\"tdlas_i\":%.0f,"
         "\"v5\":%.2f,\"bat_t\":%.0f,\"pump_t\":%.0f,\"pcb_t\":%.0f,\"bat_v\":%.2f,\"heater_stat\":%u}",
         elapsed_s_, getAlt(), getLatDelta(), getLonDelta(),
@@ -509,7 +509,7 @@ String RPURecord::toJSON() const
         getTdlasSpec1(), getTdlasSpec2(), getTdlasSpec3(), getTdlasSpec4(), getTdlasIdx(),
         round_robin_idx_,
         opc_d500_, opc_d700_, opc_d1000_, opc_d3000_, opc_d5000_, opc_d2500_,
-        getRs41Hdg(), getBemfV(),
+        getRs41Hdg(), getBemfV(), rs41_status_,
         getTsenI(), getOpcI(), getPumpI(), getTdlasI(),
         getV5V(), getBatT(), getPumpT(), getPcbT(), getBatV(), heater_stat_);
 
