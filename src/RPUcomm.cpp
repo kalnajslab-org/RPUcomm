@@ -329,73 +329,73 @@ bool RPURecord::encode(uint8_t * buf, size_t buf_size) const
     memset(buf, 0, RPU_RECORD_BYTES);
     etl::bit_stream_writer bsw(buf, RPU_RECORD_BYTES, etl::endian::big);
 
-    bsw.write_unchecked<uint8_t> (RPU_RPT_VERSION, RPU_RPT_VER_BITS);
+    bsw.write_unchecked<uint8_t> (RPU_REC_VERSION, RPU_REC_VER_BITS);
 
     // Fast fields (period = 1)
-    bsw.write_unchecked<uint8_t> (round_robin_idx_,  RPU_RPT_RR_IDX_BITS);
-    bsw.write_unchecked<uint16_t>(elapsed_s_,        RPU_RPT_ELAPSED_BITS);
-    bsw.write_unchecked<uint16_t>(alt_raw_,          RPU_RPT_ALT_BITS);
-    bsw.write_unchecked<int16_t> (lat_delta_raw_,    RPU_RPT_GPS_DELTA_BITS);
-    bsw.write_unchecked<int16_t> (lon_delta_raw_,    RPU_RPT_GPS_DELTA_BITS);
-    bsw.write_unchecked<uint8_t> (sats_,             RPU_RPT_SATS_BITS);
-    bsw.write_unchecked<uint8_t> (gps_age_s_,        RPU_RPT_GPS_AGE_BITS);
-    bsw.write_unchecked<uint16_t>(opc_d300_,         RPU_RPT_OPC_BITS);
-    bsw.write_unchecked<uint16_t>(opc_d2000_,        RPU_RPT_OPC_BITS);
-    bsw.write_unchecked<uint16_t>(tsen_airt_raw_,    RPU_RPT_TSEN_BITS);
-    bsw.write_unchecked<uint16_t>(tsen_pres_raw_,    RPU_RPT_TSEN_BITS);
-    bsw.write_unchecked<uint16_t>(tsen_ptemp_raw_,   RPU_RPT_TSEN_BITS);
-    bsw.write_unchecked<uint16_t>(rs41_air_t_raw_,   RPU_RPT_RS41_T_BITS);
-    bsw.write_unchecked<uint16_t>(rs41_pres_raw_,    RPU_RPT_RS41_P_BITS);
-    bsw.write_unchecked<uint16_t>(rs41_humidity_raw_,RPU_RPT_RS41_RH_BITS);
-    bsw.write_unchecked<uint16_t>(rs41_hsensor_t_raw_, RPU_RPT_RS41_T_BITS);
-    bsw.write_unchecked<uint16_t>(tdlas_mr_avg_raw_,   RPU_RPT_TDLAS_VMR_BITS);
-    bsw.write_unchecked<uint16_t>(tdlas_bkg_raw_,      RPU_RPT_TDLAS_BKG_BITS);
-    bsw.write_unchecked<uint8_t> (tdlas_peak_raw_,     RPU_RPT_TDLAS_PEAK_BITS);
-    bsw.write_unchecked<uint16_t>(tdlas_ratio_raw_,    RPU_RPT_TDLAS_RATIO_BITS);
-    bsw.write_unchecked<uint16_t>(tdlas_max_vmr_raw_,  RPU_RPT_TDLAS_MAX_VMR_BITS);
-    bsw.write_unchecked<uint8_t> (tdlas_laser_t_raw_,  RPU_RPT_TDLAS_LASER_T_BITS);
-    bsw.write_unchecked<uint16_t>(tdlas_spec_1_raw_,  RPU_RPT_TDLAS_SPEC_BITS);
-    bsw.write_unchecked<uint16_t>(tdlas_spec_2_raw_,  RPU_RPT_TDLAS_SPEC_BITS);
-    bsw.write_unchecked<uint16_t>(tdlas_spec_3_raw_,  RPU_RPT_TDLAS_SPEC_BITS);
-    bsw.write_unchecked<uint16_t>(tdlas_spec_4_raw_,  RPU_RPT_TDLAS_SPEC_BITS);
-    bsw.write_unchecked<uint8_t> (tdlas_idx_,         RPU_RPT_TDLAS_INDX_BITS);
+    bsw.write_unchecked<uint8_t> (round_robin_idx_,  RPU_REC_RR_IDX_BITS);
+    bsw.write_unchecked<uint16_t>(elapsed_s_,        RPU_REC_ELAPSED_BITS);
+    bsw.write_unchecked<uint16_t>(alt_raw_,          RPU_REC_ALT_BITS);
+    bsw.write_unchecked<int16_t> (lat_delta_raw_,    RPU_REC_GPS_DELTA_BITS);
+    bsw.write_unchecked<int16_t> (lon_delta_raw_,    RPU_REC_GPS_DELTA_BITS);
+    bsw.write_unchecked<uint8_t> (sats_,             RPU_REC_SATS_BITS);
+    bsw.write_unchecked<uint8_t> (gps_age_s_,        RPU_REC_GPS_AGE_BITS);
+    bsw.write_unchecked<uint16_t>(opc_d300_,         RPU_REC_OPC_BITS);
+    bsw.write_unchecked<uint16_t>(opc_d2000_,        RPU_REC_OPC_BITS);
+    bsw.write_unchecked<uint16_t>(tsen_airt_raw_,    RPU_REC_TSEN_BITS);
+    bsw.write_unchecked<uint16_t>(tsen_pres_raw_,    RPU_REC_TSEN_BITS);
+    bsw.write_unchecked<uint16_t>(tsen_ptemp_raw_,   RPU_REC_TSEN_BITS);
+    bsw.write_unchecked<uint16_t>(rs41_air_t_raw_,   RPU_REC_RS41_T_BITS);
+    bsw.write_unchecked<uint16_t>(rs41_pres_raw_,    RPU_REC_RS41_P_BITS);
+    bsw.write_unchecked<uint16_t>(rs41_humidity_raw_,RPU_REC_RS41_RH_BITS);
+    bsw.write_unchecked<uint16_t>(rs41_hsensor_t_raw_, RPU_REC_RS41_T_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_mr_avg_raw_,   RPU_REC_TDLAS_VMR_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_bkg_raw_,      RPU_REC_TDLAS_BKG_BITS);
+    bsw.write_unchecked<uint8_t> (tdlas_peak_raw_,     RPU_REC_TDLAS_PEAK_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_ratio_raw_,    RPU_REC_TDLAS_RATIO_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_max_vmr_raw_,  RPU_REC_TDLAS_MAX_VMR_BITS);
+    bsw.write_unchecked<uint8_t> (tdlas_laser_t_raw_,  RPU_REC_TDLAS_LASER_T_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_spec_1_raw_,  RPU_REC_TDLAS_SPEC_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_spec_2_raw_,  RPU_REC_TDLAS_SPEC_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_spec_3_raw_,  RPU_REC_TDLAS_SPEC_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_spec_4_raw_,  RPU_REC_TDLAS_SPEC_BITS);
+    bsw.write_unchecked<uint8_t> (tdlas_idx_,         RPU_REC_TDLAS_INDX_BITS);
 
     // Slow / round-robin fields (period = 8) — one 40-bit slot per record
     switch (round_robin_idx_) {
         case 0:
-            bsw.write_unchecked<uint16_t>(opc_d500_, RPU_RPT_OPC_BITS);
-            bsw.write_unchecked<uint16_t>(opc_d700_, RPU_RPT_OPC_BITS);
-            bsw.write_unchecked<uint8_t> (0,         RPU_RPT_SLOT_PAD_BITS);
+            bsw.write_unchecked<uint16_t>(opc_d500_, RPU_REC_OPC_BITS);
+            bsw.write_unchecked<uint16_t>(opc_d700_, RPU_REC_OPC_BITS);
+            bsw.write_unchecked<uint8_t> (0,         RPU_REC_SLOT_PAD_BITS);
             break;
         case 1:
-            bsw.write_unchecked<uint16_t>(opc_d1000_, RPU_RPT_OPC_BITS);
-            bsw.write_unchecked<uint16_t>(opc_d2500_, RPU_RPT_OPC_BITS);
-            bsw.write_unchecked<uint8_t> (0,          RPU_RPT_SLOT_PAD_BITS);
+            bsw.write_unchecked<uint16_t>(opc_d1000_, RPU_REC_OPC_BITS);
+            bsw.write_unchecked<uint16_t>(opc_d2500_, RPU_REC_OPC_BITS);
+            bsw.write_unchecked<uint8_t> (0,          RPU_REC_SLOT_PAD_BITS);
             break;
         case 2:
-            bsw.write_unchecked<uint16_t>(opc_d3000_, RPU_RPT_OPC_BITS);
-            bsw.write_unchecked<uint16_t>(opc_d5000_, RPU_RPT_OPC_BITS);
-            bsw.write_unchecked<uint8_t> (0,          RPU_RPT_SLOT_PAD_BITS);
+            bsw.write_unchecked<uint16_t>(opc_d3000_, RPU_REC_OPC_BITS);
+            bsw.write_unchecked<uint16_t>(opc_d5000_, RPU_REC_OPC_BITS);
+            bsw.write_unchecked<uint8_t> (0,          RPU_REC_SLOT_PAD_BITS);
             break;
         case 3:
-            bsw.write_unchecked<uint8_t> (rs41_hdg_raw_, RPU_RPT_HDG_BITS);
-            bsw.write_unchecked<uint16_t>(bemf_v_raw_,   RPU_RPT_BEMF_BITS);
-            bsw.write_unchecked<uint8_t> (0, RPU_RPT_SLOT_PAD_BITS);
-            bsw.write_unchecked<uint8_t> (0, RPU_RPT_SLOT_PAD_BITS);
+            bsw.write_unchecked<uint8_t> (rs41_hdg_raw_, RPU_REC_HDG_BITS);
+            bsw.write_unchecked<uint16_t>(bemf_v_raw_,   RPU_REC_BEMF_BITS);
+            bsw.write_unchecked<uint8_t> (0, RPU_REC_SLOT_PAD_BITS);
+            bsw.write_unchecked<uint8_t> (0, RPU_REC_SLOT_PAD_BITS);
             break;
         case 4:
-            bsw.write_unchecked<uint8_t>(tsen_i_raw_,  RPU_RPT_HKCURR_BITS);
-            bsw.write_unchecked<uint8_t>(opc_i_raw_,   RPU_RPT_HKCURR_BITS);
-            bsw.write_unchecked<uint8_t>(pump_i_raw_,  RPU_RPT_HKCURR_BITS);
-            bsw.write_unchecked<uint8_t>(tdlas_i_raw_, RPU_RPT_HKCURR_BITS);
-            bsw.write_unchecked<uint8_t>(v5v_raw_,     RPU_RPT_V5V_BITS);
+            bsw.write_unchecked<uint8_t>(tsen_i_raw_,  RPU_REC_HKCURR_BITS);
+            bsw.write_unchecked<uint8_t>(opc_i_raw_,   RPU_REC_HKCURR_BITS);
+            bsw.write_unchecked<uint8_t>(pump_i_raw_,  RPU_REC_HKCURR_BITS);
+            bsw.write_unchecked<uint8_t>(tdlas_i_raw_, RPU_REC_HKCURR_BITS);
+            bsw.write_unchecked<uint8_t>(v5v_raw_,     RPU_REC_V5V_BITS);
             break;
         case 5:
-            bsw.write_unchecked<uint8_t> (bat_t_raw_,  RPU_RPT_HKTEMP_BITS);
-            bsw.write_unchecked<uint8_t> (pump_t_raw_, RPU_RPT_HKTEMP_BITS);
-            bsw.write_unchecked<uint8_t> (pcb_t_raw_,  RPU_RPT_HKTEMP_BITS);
-            bsw.write_unchecked<uint16_t>(bat_v_raw_,  RPU_RPT_VOLT_BITS);
-            bsw.write_unchecked<uint8_t> (heater_stat_,RPU_RPT_HEATER_BITS);
+            bsw.write_unchecked<uint8_t> (bat_t_raw_,  RPU_REC_HKTEMP_BITS);
+            bsw.write_unchecked<uint8_t> (pump_t_raw_, RPU_REC_HKTEMP_BITS);
+            bsw.write_unchecked<uint8_t> (pcb_t_raw_,  RPU_REC_HKTEMP_BITS);
+            bsw.write_unchecked<uint16_t>(bat_v_raw_,  RPU_REC_VOLT_BITS);
+            bsw.write_unchecked<uint8_t> (heater_stat_,RPU_REC_HEATER_BITS);
             break;
     }
 
@@ -408,73 +408,73 @@ bool RPURecord::decode(const uint8_t * buf, size_t buf_size)
 
     etl::bit_stream_reader bsr(buf, RPU_RECORD_BYTES, etl::endian::big);
 
-    bsr.read_unchecked<uint8_t>(RPU_RPT_VER_BITS);  // packet version, not stored
+    bsr.read_unchecked<uint8_t>(RPU_REC_VER_BITS);  // packet version, not stored
 
     // Fast fields (period = 1)
-    round_robin_idx_    = bsr.read_unchecked<uint8_t> (RPU_RPT_RR_IDX_BITS);
-    elapsed_s_          = bsr.read_unchecked<uint16_t>(RPU_RPT_ELAPSED_BITS);
-    alt_raw_            = bsr.read_unchecked<uint16_t>(RPU_RPT_ALT_BITS);
-    lat_delta_raw_      = bsr.read_unchecked<int16_t> (RPU_RPT_GPS_DELTA_BITS);
-    lon_delta_raw_      = bsr.read_unchecked<int16_t> (RPU_RPT_GPS_DELTA_BITS);
-    sats_               = bsr.read_unchecked<uint8_t> (RPU_RPT_SATS_BITS);
-    gps_age_s_          = bsr.read_unchecked<uint8_t> (RPU_RPT_GPS_AGE_BITS);
-    opc_d300_           = bsr.read_unchecked<uint16_t>(RPU_RPT_OPC_BITS);
-    opc_d2000_          = bsr.read_unchecked<uint16_t>(RPU_RPT_OPC_BITS);
-    tsen_airt_raw_      = bsr.read_unchecked<uint16_t>(RPU_RPT_TSEN_BITS);
-    tsen_pres_raw_      = bsr.read_unchecked<uint16_t>(RPU_RPT_TSEN_BITS);
-    tsen_ptemp_raw_     = bsr.read_unchecked<uint16_t>(RPU_RPT_TSEN_BITS);
-    rs41_air_t_raw_     = bsr.read_unchecked<uint16_t>(RPU_RPT_RS41_T_BITS);
-    rs41_pres_raw_      = bsr.read_unchecked<uint16_t>(RPU_RPT_RS41_P_BITS);
-    rs41_humidity_raw_  = bsr.read_unchecked<uint16_t>(RPU_RPT_RS41_RH_BITS);
-    rs41_hsensor_t_raw_ = bsr.read_unchecked<uint16_t>(RPU_RPT_RS41_T_BITS);
-    tdlas_mr_avg_raw_   = bsr.read_unchecked<uint16_t>(RPU_RPT_TDLAS_VMR_BITS);
-    tdlas_bkg_raw_      = bsr.read_unchecked<uint16_t>(RPU_RPT_TDLAS_BKG_BITS);
-    tdlas_peak_raw_     = bsr.read_unchecked<uint8_t> (RPU_RPT_TDLAS_PEAK_BITS);
-    tdlas_ratio_raw_    = bsr.read_unchecked<uint16_t>(RPU_RPT_TDLAS_RATIO_BITS);
-    tdlas_max_vmr_raw_  = bsr.read_unchecked<uint16_t>(RPU_RPT_TDLAS_MAX_VMR_BITS);
-    tdlas_laser_t_raw_  = bsr.read_unchecked<uint8_t> (RPU_RPT_TDLAS_LASER_T_BITS);
-    tdlas_spec_1_raw_   = bsr.read_unchecked<uint16_t>(RPU_RPT_TDLAS_SPEC_BITS);
-    tdlas_spec_2_raw_   = bsr.read_unchecked<uint16_t>(RPU_RPT_TDLAS_SPEC_BITS);
-    tdlas_spec_3_raw_   = bsr.read_unchecked<uint16_t>(RPU_RPT_TDLAS_SPEC_BITS);
-    tdlas_spec_4_raw_   = bsr.read_unchecked<uint16_t>(RPU_RPT_TDLAS_SPEC_BITS);
-    tdlas_idx_          = bsr.read_unchecked<uint8_t> (RPU_RPT_TDLAS_INDX_BITS);
+    round_robin_idx_    = bsr.read_unchecked<uint8_t> (RPU_REC_RR_IDX_BITS);
+    elapsed_s_          = bsr.read_unchecked<uint16_t>(RPU_REC_ELAPSED_BITS);
+    alt_raw_            = bsr.read_unchecked<uint16_t>(RPU_REC_ALT_BITS);
+    lat_delta_raw_      = bsr.read_unchecked<int16_t> (RPU_REC_GPS_DELTA_BITS);
+    lon_delta_raw_      = bsr.read_unchecked<int16_t> (RPU_REC_GPS_DELTA_BITS);
+    sats_               = bsr.read_unchecked<uint8_t> (RPU_REC_SATS_BITS);
+    gps_age_s_          = bsr.read_unchecked<uint8_t> (RPU_REC_GPS_AGE_BITS);
+    opc_d300_           = bsr.read_unchecked<uint16_t>(RPU_REC_OPC_BITS);
+    opc_d2000_          = bsr.read_unchecked<uint16_t>(RPU_REC_OPC_BITS);
+    tsen_airt_raw_      = bsr.read_unchecked<uint16_t>(RPU_REC_TSEN_BITS);
+    tsen_pres_raw_      = bsr.read_unchecked<uint16_t>(RPU_REC_TSEN_BITS);
+    tsen_ptemp_raw_     = bsr.read_unchecked<uint16_t>(RPU_REC_TSEN_BITS);
+    rs41_air_t_raw_     = bsr.read_unchecked<uint16_t>(RPU_REC_RS41_T_BITS);
+    rs41_pres_raw_      = bsr.read_unchecked<uint16_t>(RPU_REC_RS41_P_BITS);
+    rs41_humidity_raw_  = bsr.read_unchecked<uint16_t>(RPU_REC_RS41_RH_BITS);
+    rs41_hsensor_t_raw_ = bsr.read_unchecked<uint16_t>(RPU_REC_RS41_T_BITS);
+    tdlas_mr_avg_raw_   = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_VMR_BITS);
+    tdlas_bkg_raw_      = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_BKG_BITS);
+    tdlas_peak_raw_     = bsr.read_unchecked<uint8_t> (RPU_REC_TDLAS_PEAK_BITS);
+    tdlas_ratio_raw_    = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_RATIO_BITS);
+    tdlas_max_vmr_raw_  = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_MAX_VMR_BITS);
+    tdlas_laser_t_raw_  = bsr.read_unchecked<uint8_t> (RPU_REC_TDLAS_LASER_T_BITS);
+    tdlas_spec_1_raw_   = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_SPEC_BITS);
+    tdlas_spec_2_raw_   = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_SPEC_BITS);
+    tdlas_spec_3_raw_   = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_SPEC_BITS);
+    tdlas_spec_4_raw_   = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_SPEC_BITS);
+    tdlas_idx_          = bsr.read_unchecked<uint8_t> (RPU_REC_TDLAS_INDX_BITS);
 
     // Slow / round-robin fields (period = 8) — one 40-bit slot per record
     switch (round_robin_idx_) {
         case 0:
-            opc_d500_ = bsr.read_unchecked<uint16_t>(RPU_RPT_OPC_BITS);
-            opc_d700_ = bsr.read_unchecked<uint16_t>(RPU_RPT_OPC_BITS);
-            bsr.read_unchecked<uint8_t>(RPU_RPT_SLOT_PAD_BITS);
+            opc_d500_ = bsr.read_unchecked<uint16_t>(RPU_REC_OPC_BITS);
+            opc_d700_ = bsr.read_unchecked<uint16_t>(RPU_REC_OPC_BITS);
+            bsr.read_unchecked<uint8_t>(RPU_REC_SLOT_PAD_BITS);
             break;
         case 1:
-            opc_d1000_ = bsr.read_unchecked<uint16_t>(RPU_RPT_OPC_BITS);
-            opc_d2500_ = bsr.read_unchecked<uint16_t>(RPU_RPT_OPC_BITS);
-            bsr.read_unchecked<uint8_t>(RPU_RPT_SLOT_PAD_BITS);
+            opc_d1000_ = bsr.read_unchecked<uint16_t>(RPU_REC_OPC_BITS);
+            opc_d2500_ = bsr.read_unchecked<uint16_t>(RPU_REC_OPC_BITS);
+            bsr.read_unchecked<uint8_t>(RPU_REC_SLOT_PAD_BITS);
             break;
         case 2:
-            opc_d3000_ = bsr.read_unchecked<uint16_t>(RPU_RPT_OPC_BITS);
-            opc_d5000_ = bsr.read_unchecked<uint16_t>(RPU_RPT_OPC_BITS);
-            bsr.read_unchecked<uint8_t>(RPU_RPT_SLOT_PAD_BITS);
+            opc_d3000_ = bsr.read_unchecked<uint16_t>(RPU_REC_OPC_BITS);
+            opc_d5000_ = bsr.read_unchecked<uint16_t>(RPU_REC_OPC_BITS);
+            bsr.read_unchecked<uint8_t>(RPU_REC_SLOT_PAD_BITS);
             break;
         case 3:
-            rs41_hdg_raw_ = bsr.read_unchecked<uint8_t> (RPU_RPT_HDG_BITS);
-            bemf_v_raw_   = bsr.read_unchecked<uint16_t>(RPU_RPT_BEMF_BITS);
-            bsr.read_unchecked<uint8_t>(RPU_RPT_SLOT_PAD_BITS);
-            bsr.read_unchecked<uint8_t>(RPU_RPT_SLOT_PAD_BITS);
+            rs41_hdg_raw_ = bsr.read_unchecked<uint8_t> (RPU_REC_HDG_BITS);
+            bemf_v_raw_   = bsr.read_unchecked<uint16_t>(RPU_REC_BEMF_BITS);
+            bsr.read_unchecked<uint8_t>(RPU_REC_SLOT_PAD_BITS);
+            bsr.read_unchecked<uint8_t>(RPU_REC_SLOT_PAD_BITS);
             break;
         case 4:
-            tsen_i_raw_  = bsr.read_unchecked<uint8_t>(RPU_RPT_HKCURR_BITS);
-            opc_i_raw_   = bsr.read_unchecked<uint8_t>(RPU_RPT_HKCURR_BITS);
-            pump_i_raw_  = bsr.read_unchecked<uint8_t>(RPU_RPT_HKCURR_BITS);
-            tdlas_i_raw_ = bsr.read_unchecked<uint8_t>(RPU_RPT_HKCURR_BITS);
-            v5v_raw_     = bsr.read_unchecked<uint8_t>(RPU_RPT_V5V_BITS);
+            tsen_i_raw_  = bsr.read_unchecked<uint8_t>(RPU_REC_HKCURR_BITS);
+            opc_i_raw_   = bsr.read_unchecked<uint8_t>(RPU_REC_HKCURR_BITS);
+            pump_i_raw_  = bsr.read_unchecked<uint8_t>(RPU_REC_HKCURR_BITS);
+            tdlas_i_raw_ = bsr.read_unchecked<uint8_t>(RPU_REC_HKCURR_BITS);
+            v5v_raw_     = bsr.read_unchecked<uint8_t>(RPU_REC_V5V_BITS);
             break;
         case 5:
-            bat_t_raw_    = bsr.read_unchecked<uint8_t> (RPU_RPT_HKTEMP_BITS);
-            pump_t_raw_   = bsr.read_unchecked<uint8_t> (RPU_RPT_HKTEMP_BITS);
-            pcb_t_raw_    = bsr.read_unchecked<uint8_t> (RPU_RPT_HKTEMP_BITS);
-            bat_v_raw_    = bsr.read_unchecked<uint16_t>(RPU_RPT_VOLT_BITS);
-            heater_stat_  = bsr.read_unchecked<uint8_t> (RPU_RPT_HEATER_BITS);
+            bat_t_raw_    = bsr.read_unchecked<uint8_t> (RPU_REC_HKTEMP_BITS);
+            pump_t_raw_   = bsr.read_unchecked<uint8_t> (RPU_REC_HKTEMP_BITS);
+            pcb_t_raw_    = bsr.read_unchecked<uint8_t> (RPU_REC_HKTEMP_BITS);
+            bat_v_raw_    = bsr.read_unchecked<uint16_t>(RPU_REC_VOLT_BITS);
+            heater_stat_  = bsr.read_unchecked<uint8_t> (RPU_REC_HEATER_BITS);
             break;
     }
 

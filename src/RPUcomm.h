@@ -178,58 +178,58 @@ private:
 };
 
 // ---------------------------------------------------------------------------
-// RPU report bit-field widths
-// Shared between RPU (encoder) and RATCHuTS (decoder).
-// Packet version 1 — 304 bits = 38 bytes, big-endian, no padding.
+// RPURecord bit-field widths
+// Shared between RPU (encoder) and TMmonster (decoder).
+// Record version 1 — 384 bits = 48 bytes, big-endian, no padding.
 //
-// Matches the "Profiler TM Format 2026" spec: 5000 records/profile at 38
-// bytes each (190,000 bytes, exactly the spec's target). Each record carries
-// 20 "fast" fields (period = 1, present every record) plus one fixed-size
-// 40-bit "slot" from a round-robin rotation of 22 "slow" fields (period = 8
-// — each slow field is therefore updated roughly once every 8 records). The
+// Each RPURecord carries 27 "fast" fields (period = 1, present every record)
+// plus one fixed-size 40-bit "slot" from a round-robin rotation of 6 "slow"
+// field groups (period = 6 — each slow group is therefore sent roughly once
+// every 6 records). An RPU report is a block header followed by a sequence
+// of RPURecords. The
 // round-robin index is itself one of the fast fields, so a decoder always
 // knows which slow fields are valid in a given record's slot. The slot is a
-// fixed RPU_RPT_SLOT_BITS regardless of index, so the overall record length
+// fixed RPU_REC_SLOT_BITS regardless of index, so the overall record length
 // never varies.
 // ---------------------------------------------------------------------------
-constexpr uint8_t  RPU_RPT_VERSION       = 1;
-constexpr uint8_t  RPU_RPT_VER_BITS      = 4;    // packet format version
+constexpr uint8_t  RPU_REC_VERSION       = 1;
+constexpr uint8_t  RPU_REC_VER_BITS      = 4;    // packet format version
 
 // --- Fast fields (period = 1, present in every record) ---------------------
-constexpr uint8_t  RPU_RPT_RR_IDX_BITS          = 4;  // round-robin slot index (0–5)
-constexpr uint8_t  RPU_RPT_ELAPSED_BITS         = 16; // elapsed seconds since GPSStartTime (0–65535 s)
+constexpr uint8_t  RPU_REC_RR_IDX_BITS          = 4;  // round-robin slot index (0–5)
+constexpr uint8_t  RPU_REC_ELAPSED_BITS         = 16; // elapsed seconds since GPSStartTime (0–65535 s)
 
-constexpr uint8_t  RPU_RPT_ALT_BITS             = 16; // altitude, m, raw
-constexpr uint8_t  RPU_RPT_GPS_DELTA_BITS       = 16; // (lat|lon - start) x50000, signed
-constexpr uint8_t  RPU_RPT_SATS_BITS            = 4;  // satellite count (0–15)
-constexpr uint8_t  RPU_RPT_GPS_AGE_BITS         = 4;  // GPS fix age, s, clamped (0–15 s)
+constexpr uint8_t  RPU_REC_ALT_BITS             = 16; // altitude, m, raw
+constexpr uint8_t  RPU_REC_GPS_DELTA_BITS       = 16; // (lat|lon - start) x50000, signed
+constexpr uint8_t  RPU_REC_SATS_BITS            = 4;  // satellite count (0–15)
+constexpr uint8_t  RPU_REC_GPS_AGE_BITS         = 4;  // GPS fix age, s, clamped (0–15 s)
 
-constexpr uint8_t  RPU_RPT_OPC_BITS             = 16; // OPC bin counts, raw
-constexpr uint8_t  RPU_RPT_TSEN_BITS            = 16; // TSEN raw counts (airt: 0–4095; pres/ptemp: top 16 bits of 24-bit count)
+constexpr uint8_t  RPU_REC_OPC_BITS             = 16; // OPC bin counts, raw
+constexpr uint8_t  RPU_REC_TSEN_BITS            = 16; // TSEN raw counts (airt: 0–4095; pres/ptemp: top 16 bits of 24-bit count)
 
-constexpr uint8_t  RPU_RPT_RS41_T_BITS          = 16; // (T + 100) x100  (-100.00 to 555.35 °C)
-constexpr uint8_t  RPU_RPT_RS41_P_BITS          = 16; // pressure x10    (0–6553.5 mb)
-constexpr uint8_t  RPU_RPT_RS41_RH_BITS         = 16; // RH x100         (0–655.35 %)
+constexpr uint8_t  RPU_REC_RS41_T_BITS          = 16; // (T + 100) x100  (-100.00 to 555.35 °C)
+constexpr uint8_t  RPU_REC_RS41_P_BITS          = 16; // pressure x10    (0–6553.5 mb)
+constexpr uint8_t  RPU_REC_RS41_RH_BITS         = 16; // RH x100         (0–655.35 %)
 
-constexpr uint8_t  RPU_RPT_TDLAS_VMR_BITS       = 16; // TDLAS VMR_ave x100 (0–655.36)
-constexpr uint8_t  RPU_RPT_TDLAS_BKG_BITS       = 12; // TDLAS bkg x10 (0–409.5)
-constexpr uint8_t  RPU_RPT_TDLAS_PEAK_BITS      = 8;  // TDLAS peak x10 (0–25.5)
-constexpr uint8_t  RPU_RPT_TDLAS_RATIO_BITS     = 10; // TDLAS ratio x1000 (0–1.023)
-constexpr uint8_t  RPU_RPT_TDLAS_MAX_VMR_BITS   = 14; // TDLAS max VMR x10 (0–1638.4)
-constexpr uint8_t  RPU_RPT_TDLAS_LASER_T_BITS   = 8;  // TDLAS laser temp, °C (0–255)
-constexpr uint8_t  RPU_RPT_TDLAS_INDX_BITS      = 4;  // TDLAS spectra index (0–15, instrument data)
-constexpr uint8_t  RPU_RPT_TDLAS_SPEC_BITS      = 12; // TDLAS spectra value x1000 (0–4.095), per channel
+constexpr uint8_t  RPU_REC_TDLAS_VMR_BITS       = 16; // TDLAS VMR_ave x100 (0–655.36)
+constexpr uint8_t  RPU_REC_TDLAS_BKG_BITS       = 12; // TDLAS bkg x10 (0–409.5)
+constexpr uint8_t  RPU_REC_TDLAS_PEAK_BITS      = 8;  // TDLAS peak x10 (0–25.5)
+constexpr uint8_t  RPU_REC_TDLAS_RATIO_BITS     = 10; // TDLAS ratio x1000 (0–1.023)
+constexpr uint8_t  RPU_REC_TDLAS_MAX_VMR_BITS   = 14; // TDLAS max VMR x10 (0–1638.4)
+constexpr uint8_t  RPU_REC_TDLAS_LASER_T_BITS   = 8;  // TDLAS laser temp, °C (0–255)
+constexpr uint8_t  RPU_REC_TDLAS_INDX_BITS      = 4;  // TDLAS spectra index (0–15, instrument data)
+constexpr uint8_t  RPU_REC_TDLAS_SPEC_BITS      = 12; // TDLAS spectra value x1000 (0–4.095), per channel
 
 // --- Round-robin slow fields (period = 6; one fixed-size slot per record) --
-constexpr uint8_t  RPU_RPT_HDG_BITS        = 8;  // RS41 heading, x256/360 (0–360°, ~1.41° res)
-constexpr uint8_t  RPU_RPT_BEMF_BITS       = 16; // pump BEMF, V x1000
-constexpr uint8_t  RPU_RPT_HKCURR_BITS     = 8;  // subsystem currents, mA/4 (0–1020 mA, 4 mA res)
-constexpr uint8_t  RPU_RPT_V5V_BITS        = 8;  // V x50  (0–5.10 V, 0.02 V res)
-constexpr uint8_t  RPU_RPT_HKTEMP_BITS     = 8;  // (T + 100), 1 °C res (-100 to 155 °C)
-constexpr uint8_t  RPU_RPT_VOLT_BITS       = 12; // battery voltage x100 (0–40.95 V)
-constexpr uint8_t  RPU_RPT_HEATER_BITS     = 4;  // heater status (bit0: battery heater on)
-constexpr uint8_t  RPU_RPT_SLOT_PAD_BITS   = 8;  // padding within the two-field 40-bit slots (indices 0-3)
-constexpr size_t   RPU_RPT_SLOT_BITS       = 40; // fixed round-robin slot size
+constexpr uint8_t  RPU_REC_HDG_BITS        = 8;  // RS41 heading, x256/360 (0–360°, ~1.41° res)
+constexpr uint8_t  RPU_REC_BEMF_BITS       = 16; // pump BEMF, V x1000
+constexpr uint8_t  RPU_REC_HKCURR_BITS     = 8;  // subsystem currents, mA/4 (0–1020 mA, 4 mA res)
+constexpr uint8_t  RPU_REC_V5V_BITS        = 8;  // V x50  (0–5.10 V, 0.02 V res)
+constexpr uint8_t  RPU_REC_HKTEMP_BITS     = 8;  // (T + 100), 1 °C res (-100 to 155 °C)
+constexpr uint8_t  RPU_REC_VOLT_BITS       = 12; // battery voltage x100 (0–40.95 V)
+constexpr uint8_t  RPU_REC_HEATER_BITS     = 4;  // heater status (bit0: battery heater on)
+constexpr uint8_t  RPU_REC_SLOT_PAD_BITS   = 8;  // padding within the two-field 40-bit slots (indices 0-3)
+constexpr size_t   RPU_REC_SLOT_BITS       = 40; // fixed round-robin slot size
 
 constexpr size_t   RPU_RECORD_BYTES        = 48; // (344 fast + 40 slow) / 8
 constexpr size_t   RPU_BLOCK_HDR_BYTES     = 12; // epoch_time (uint32) + gps_lat (int32) + gps_lon (int32)
@@ -237,7 +237,7 @@ constexpr size_t   RPU_BLOCK_HDR_BYTES     = 12; // epoch_time (uint32) + gps_la
 // ---------------------------------------------------------------------------
 // RPURecord
 // Holds one tickMeasure() sample (GPS, OPC, TSEN, RS41, TDLAS, housekeeping)
-// and converts to/from the bit-packed wire format (RPU_RPT_VERSION 1).
+// and converts to/from the bit-packed wire format (RPU_REC_VERSION 1).
 //
 // Fast fields (period = 1) are present in every record. Slow fields
 // (period = 8) are set on every tick, but encode() only serialises the one

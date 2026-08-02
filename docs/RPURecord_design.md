@@ -6,7 +6,7 @@ This document records the design discussion and scaling decisions behind the
 ## Goal
 
 `RPURecord` bit-packs one `tickMeasure()` sample into a **fixed 48-byte
-(384-bit) record**. This is `RPU_RPT_VERSION = 1`, the first released wire
+(384-bit) record**. This is `RPU_REC_VERSION = 1`, the first released wire
 format.
 
 It follows the same pattern as `RPUPacket`:
@@ -46,7 +46,7 @@ Present in every record, in this order:
 
 | # | Field | Setter / Getter | Encoding | Bits |
 |---|---|---|---|---|
-| — | record format version | encoded internally | fixed value `RPU_RPT_VERSION = 1` | 4 |
+| — | record format version | encoded internally | fixed value `RPU_REC_VERSION = 1` | 4 |
 | 1 | round-robin index | managed internally (see "Round-robin cycling") | 0–5, selects which slow-field slot follows | 4 |
 | 2 | elapsed time | `setElapsedS`/`getElapsedS` | seconds since `MeasureStartMillis`, raw uint16 (0–65535 s) | 16 |
 | 3 | GPS altitude | `setAlt`/`getAlt` | meters, raw uint16 | 16 |
@@ -95,11 +95,12 @@ leaving the other slow members at their default (zero) values.
 | 0 | ROPC 500nm (16) + ROPC 700nm (16) + pad (8) | 40 | `setOpcD500`/`setOpcD700` |
 | 1 | ROPC 1000nm (16) + ROPC 2500nm (16) + pad (8) | 40 | `setOpcD1000`/`setOpcD2500` |
 | 2 | ROPC 3000nm (16) + ROPC 5000nm (16) + pad (8) | 40 | `setOpcD3000`/`setOpcD5000` |
-| 3 | RS41 heading (16) + pump BEMF (16) + pad (8) | 40 | `setRs41Hdg`/`setBemfV` |
+| 3 | RS41 heading (8) + pump BEMF (16) + pad (16) | 40 | `setRs41Hdg`/`setBemfV` |
 | 4 | I_TSEN (8) + I_ROPC (8) + I_PUMP (8) + I_TDLAS (8) + V_5V (8) | 40 | `setTsenI`/`setOpcI`/`setPumpI`/`setTdlasI`/`setV5V` |
 | 5 | T_Batt (8) + T_Pump (8) + T_PCB (8) + V_Batt (12) + Heater_stat (4) | 40 | `setBatT`/`setPumpT`/`setPcbT`/`setBatV`/`setHeaterStat` |
 
-Slots 0–3 are two 16-bit fields + 8 bits of padding (32+8=40); slots 4–5 are
+Slots 0–2 are two 16-bit fields + 8 bits of padding (32+8=40). Slot 3 is an
+8-bit heading + 16-bit BEMF + 16 bits of padding (8+16+16=40). Slots 4–5 are
 five fields each that sum to exactly 40 bits with no padding.
 
 ### TDLAS scaling (provisional)
@@ -208,34 +209,34 @@ slot) = **384 bits = 48 bytes** (`RPU_RECORD_BYTES`), no padding needed.
 
 | Constant | Bits | Used for |
 |---|---|---|
-| `RPU_RPT_VER_BITS` | 4 | record format version (`RPU_RPT_VERSION = 1`) |
-| `RPU_RPT_RR_IDX_BITS` | 4 | round-robin slot index (0–5) |
-| `RPU_RPT_ELAPSED_BITS` | 16 | elapsed seconds since `MeasureStartMillis` |
-| `RPU_RPT_ALT_BITS` | 16 | altitude, m, raw |
-| `RPU_RPT_GPS_DELTA_BITS` | 16 | `(lat\|lon - start) x50000`, signed |
-| `RPU_RPT_SATS_BITS` | 4 | satellite count (0–15) |
-| `RPU_RPT_GPS_AGE_BITS` | 4 | GPS fix age, s, clamped (0–15 s) |
-| `RPU_RPT_OPC_BITS` | 16 | OPC bin counts, raw |
-| `RPU_RPT_TSEN_BITS` | 16 | TSEN raw counts (airt: 0–4095; pres/ptemp: top 16 bits of 24-bit count) |
-| `RPU_RPT_RS41_T_BITS` | 16 | `(T+100) x100` (-100.00 to 555.35 °C) |
-| `RPU_RPT_RS41_P_BITS` | 16 | pressure `x10` (0–6553.5 mb) |
-| `RPU_RPT_RS41_RH_BITS` | 16 | RH `x100` (0–655.35 %) |
-| `RPU_RPT_TDLAS_VMR_BITS` | 16 | TDLAS VMR_ave `x100`, provisional (0–655.36) |
-| `RPU_RPT_TDLAS_BKG_BITS` | 12 | TDLAS bkg `x10`, provisional (0–409.5) |
-| `RPU_RPT_TDLAS_PEAK_BITS` | 8 | TDLAS peak `x10`, provisional (0–25.5) |
-| `RPU_RPT_TDLAS_RATIO_BITS` | 10 | TDLAS ratio `x1000`, provisional (0–1.023) |
-| `RPU_RPT_TDLAS_MAX_VMR_BITS` | 14 | TDLAS max VMR `x10`, provisional (0–1638.4) |
-| `RPU_RPT_TDLAS_LASER_T_BITS` | 8 | TDLAS laser temperature, °C (0–255) |
-| `RPU_RPT_TDLAS_SPEC_BITS` | 12 | TDLAS spectra value `x1000` per channel, provisional (0–4.095) |
-| `RPU_RPT_TDLAS_INDX_BITS` | 4 | TDLAS spectra index (0–15, instrument data value) |
-| `RPU_RPT_HDG_BITS` | 16 | RS41 heading, degrees `x100` (0–360.00) |
-| `RPU_RPT_BEMF_BITS` | 16 | pump BEMF, V `x1000` |
-| `RPU_RPT_HKCURR_BITS` | 8 | subsystem currents, mA/4 (0–1020 mA, 4 mA res) |
-| `RPU_RPT_V5V_BITS` | 8 | V `x50` (0–5.10 V, 0.02 V res) |
-| `RPU_RPT_HKTEMP_BITS` | 8 | `(T+100)`, 1 °C res (-100 to 155 °C) |
-| `RPU_RPT_VOLT_BITS` | 12 | battery voltage `x100` (0–40.95 V) |
-| `RPU_RPT_HEATER_BITS` | 4 | heater status (bit0: battery heater on) |
-| `RPU_RPT_SLOT_PAD_BITS` | 8 | padding within the two-field 40-bit slots (indices 0–3) |
+| `RPU_REC_VER_BITS` | 4 | record format version (`RPU_REC_VERSION = 1`) |
+| `RPU_REC_RR_IDX_BITS` | 4 | round-robin slot index (0–5) |
+| `RPU_REC_ELAPSED_BITS` | 16 | elapsed seconds since `MeasureStartMillis` |
+| `RPU_REC_ALT_BITS` | 16 | altitude, m, raw |
+| `RPU_REC_GPS_DELTA_BITS` | 16 | `(lat\|lon - start) x50000`, signed |
+| `RPU_REC_SATS_BITS` | 4 | satellite count (0–15) |
+| `RPU_REC_GPS_AGE_BITS` | 4 | GPS fix age, s, clamped (0–15 s) |
+| `RPU_REC_OPC_BITS` | 16 | OPC bin counts, raw |
+| `RPU_REC_TSEN_BITS` | 16 | TSEN raw counts (airt: 0–4095; pres/ptemp: top 16 bits of 24-bit count) |
+| `RPU_REC_RS41_T_BITS` | 16 | `(T+100) x100` (-100.00 to 555.35 °C) |
+| `RPU_REC_RS41_P_BITS` | 16 | pressure `x10` (0–6553.5 mb) |
+| `RPU_REC_RS41_RH_BITS` | 16 | RH `x100` (0–655.35 %) |
+| `RPU_REC_TDLAS_VMR_BITS` | 16 | TDLAS VMR_ave `x100`, provisional (0–655.36) |
+| `RPU_REC_TDLAS_BKG_BITS` | 12 | TDLAS bkg `x10`, provisional (0–409.5) |
+| `RPU_REC_TDLAS_PEAK_BITS` | 8 | TDLAS peak `x10`, provisional (0–25.5) |
+| `RPU_REC_TDLAS_RATIO_BITS` | 10 | TDLAS ratio `x1000`, provisional (0–1.023) |
+| `RPU_REC_TDLAS_MAX_VMR_BITS` | 14 | TDLAS max VMR `x10`, provisional (0–1638.4) |
+| `RPU_REC_TDLAS_LASER_T_BITS` | 8 | TDLAS laser temperature, °C (0–255) |
+| `RPU_REC_TDLAS_SPEC_BITS` | 12 | TDLAS spectra value `x1000` per channel, provisional (0–4.095) |
+| `RPU_REC_TDLAS_INDX_BITS` | 4 | TDLAS spectra index (0–15, instrument data value) |
+| `RPU_REC_HDG_BITS` | 16 | RS41 heading, degrees `x100` (0–360.00) |
+| `RPU_REC_BEMF_BITS` | 16 | pump BEMF, V `x1000` |
+| `RPU_REC_HKCURR_BITS` | 8 | subsystem currents, mA/4 (0–1020 mA, 4 mA res) |
+| `RPU_REC_V5V_BITS` | 8 | V `x50` (0–5.10 V, 0.02 V res) |
+| `RPU_REC_HKTEMP_BITS` | 8 | `(T+100)`, 1 °C res (-100 to 155 °C) |
+| `RPU_REC_VOLT_BITS` | 12 | battery voltage `x100` (0–40.95 V) |
+| `RPU_REC_HEATER_BITS` | 4 | heater status (bit0: battery heater on) |
+| `RPU_REC_SLOT_PAD_BITS` | 8 | padding within the two-field 40-bit slots (indices 0–3) |
 | `RPU_RECORD_BYTES` | — | 48 bytes = (344 fast + 40 slow) / 8 |
 | `RPU_BLOCK_HDR_BYTES` | — | 12 bytes = epoch_time (uint32) + gps_lat (int32) + gps_lon (int32) |
 
