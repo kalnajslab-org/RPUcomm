@@ -207,9 +207,9 @@ constexpr uint8_t  RPU_REC_GPS_AGE_BITS         = 4;  // GPS fix age, s, clamped
 constexpr uint8_t  RPU_REC_OPC_BITS             = 16; // OPC bin counts, raw
 constexpr uint8_t  RPU_REC_TSEN_BITS            = 16; // TSEN raw counts (airt: 0–4095; pres/ptemp: top 16 bits of 24-bit count)
 
-constexpr uint8_t  RPU_REC_RS41_T_BITS          = 16; // (T + 100) x100  (-100.00 to 555.35 °C)
-constexpr uint8_t  RPU_REC_RS41_P_BITS          = 16; // pressure x10    (0–6553.5 mb)
-constexpr uint8_t  RPU_REC_RS41_RH_BITS         = 16; // (RH + 20) x100  (-20.00 to +635.35 %)
+constexpr uint8_t  RPU_REC_RS41_T_BITS          = 16; // (T + 100) x436.9067  (-100 to +50 °C)
+constexpr uint8_t  RPU_REC_RS41_P_BITS          = 16; // (ln(P) - 3.9120) x21525.87  (50–1050 hPa)
+constexpr uint8_t  RPU_REC_RS41_RH_BITS         = 16; // (RH + 20) x543.1333  (-20 to +100 %RH)
 
 constexpr uint8_t  RPU_REC_TDLAS_VMR_BITS       = 16; // TDLAS VMR_ave x100 (0–655.36)
 constexpr uint8_t  RPU_REC_TDLAS_BKG_BITS       = 12; // TDLAS bkg x10 (0–409.5)
@@ -330,10 +330,10 @@ public:
     uint16_t getTsenAirt()     const { return tsen_airt_raw_; }
     uint16_t getTsenPres()     const { return tsen_pres_raw_; }
     uint16_t getTsenPtemp()    const { return tsen_ptemp_raw_; }
-    float    getRs41AirT()     const { return (rs41_air_t_raw_ / 100.0f) - 100.0f; }
-    float    getRs41Pres()     const { return rs41_pres_raw_ / 10.0f; }
-    float    getRs41Humidity() const { return (rs41_humidity_raw_ / 100.0f) - 20.0f; }  // -20.00 to +635.35 %
-    float    getRs41HSensorT() const { return (rs41_hsensor_t_raw_ / 100.0f) - 100.0f; }
+    float    getRs41AirT()     const { return (rs41_air_t_raw_ / 436.9067f) - 100.0f; }
+    float    getRs41Pres()     const { return expf((rs41_pres_raw_ / 21525.87f) + 3.9120f); }
+    float    getRs41Humidity() const { return (rs41_humidity_raw_ / 543.1333f) - 20.0f; }
+    float    getRs41HSensorT() const { return (rs41_hsensor_t_raw_ / 436.9067f) - 100.0f; }
 
     float    getTdlasMrAvg()   const { return tdlas_mr_avg_raw_ / 100.0f; }
     float    getTdlasBkg()     const { return tdlas_bkg_raw_ / 10.0f; }
@@ -408,10 +408,10 @@ private:
     uint16_t tsen_airt_raw_      = 0; // raw 12-bit A/D count
     uint16_t tsen_pres_raw_      = 0; // top 16 bits of raw 24-bit count
     uint16_t tsen_ptemp_raw_     = 0; // top 16 bits of raw 24-bit count
-    uint16_t rs41_air_t_raw_     = 0; // (T + 100) x100
-    uint16_t rs41_pres_raw_      = 0; // x10 mb
-    uint16_t rs41_humidity_raw_  = 0; // (RH + 20) x100
-    uint16_t rs41_hsensor_t_raw_ = 0; // (T + 100) x100
+    uint16_t rs41_air_t_raw_     = 0; // (T + 100) x436.9067, -100 to +50 °C
+    uint16_t rs41_pres_raw_      = 0; // (ln(P) - 3.9120) x21525.87, 50-1050 hPa
+    uint16_t rs41_humidity_raw_  = 0; // (RH + 20) x543.1333, -20 to +100 %RH
+    uint16_t rs41_hsensor_t_raw_ = 0; // (T + 100) x436.9067, -100 to +50 °C
     uint16_t tdlas_mr_avg_raw_   = 0; // x100 (0-655.36)
     uint16_t tdlas_bkg_raw_      = 0; // x10 (0-409.5)
     uint8_t  tdlas_peak_raw_     = 0; // x10 (0-25.5)

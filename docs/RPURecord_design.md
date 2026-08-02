@@ -59,10 +59,10 @@ Present in every record, in this order:
 | 10 | TSEN air temperature | `setTsenAirt`/`getTsenAirt` | raw 12-bit A/D count (0–0xFFF) | 16 |
 | 11 | TSEN pressure | `setTsenPres`/`getTsenPres` | top 16 bits of raw 24-bit count | 16 |
 | 12 | TSEN temp-of-pressure | `setTsenPtemp`/`getTsenPtemp` | top 16 bits of raw 24-bit count | 16 |
-| 13 | RS41 air temperature | `setRs41AirT`/`getRs41AirT` | `(T+100) x100`, -100.00 to 555.35 °C | 16 |
-| 14 | RS41 pressure | `setRs41Pres`/`getRs41Pres` | `x10`, 0–6553.5 mb | 16 |
-| 15 | RS41 RH | `setRs41Humidity`/`getRs41Humidity` | `(RH+20) x100`, -20.00 to +635.35 % | 16 |
-| 16 | RS41 temp-of-RH | `setRs41HSensorT`/`getRs41HSensorT` | `(T+100) x100`, -100.00 to 555.35 °C | 16 |
+| 13 | RS41 air temperature | `setRs41AirT`/`getRs41AirT` | `(T+100) x436.9067`, -100 to +50 °C | 16 |
+| 14 | RS41 pressure | `setRs41Pres`/`getRs41Pres` | `(ln(P) - 3.9120) x21525.87`, 50–1050 hPa | 16 |
+| 15 | RS41 RH | `setRs41Humidity`/`getRs41Humidity` | `(RH+20) x543.1333`, -20 to +100 %RH | 16 |
+| 16 | RS41 temp-of-RH | `setRs41HSensorT`/`getRs41HSensorT` | `(T+100) x436.9067`, -100 to +50 °C | 16 |
 | 17 | TDLAS VMR_ave | `setTdlasMrAvg`/`getTdlasMrAvg` | `x100`, 0–655.36 (provisional) | 16 |
 | 18 | TDLAS bkg | `setTdlasBkg`/`getTdlasBkg` | `x10`, 0–409.5 (provisional) | 12 |
 | 19 | TDLAS peak | `setTdlasPeak`/`getTdlasPeak` | `x10`, 0–25.5 (provisional) | 8 |
@@ -233,9 +233,9 @@ slot) = **384 bits = 48 bytes** (`RPU_RECORD_BYTES`), no padding needed.
 | `RPU_REC_GPS_AGE_BITS` | 4 | GPS fix age, s, clamped (0–15 s) |
 | `RPU_REC_OPC_BITS` | 16 | OPC bin counts, raw |
 | `RPU_REC_TSEN_BITS` | 16 | TSEN raw counts (airt: 0–4095; pres/ptemp: top 16 bits of 24-bit count) |
-| `RPU_REC_RS41_T_BITS` | 16 | `(T+100) x100` (-100.00 to 555.35 °C) |
-| `RPU_REC_RS41_P_BITS` | 16 | pressure `x10` (0–6553.5 mb) |
-| `RPU_REC_RS41_RH_BITS` | 16 | RH `x100` (0–655.35 %) |
+| `RPU_REC_RS41_T_BITS` | 16 | `(T+100) x436.9067` (-100 to +50 °C) |
+| `RPU_REC_RS41_P_BITS` | 16 | `(ln(P) - 3.9120) x21525.87` (50–1050 hPa) |
+| `RPU_REC_RS41_RH_BITS` | 16 | `(RH+20) x543.1333` (-20 to +100 %RH) |
 | `RPU_REC_TDLAS_VMR_BITS` | 16 | TDLAS VMR_ave `x100`, provisional (0–655.36) |
 | `RPU_REC_TDLAS_BKG_BITS` | 12 | TDLAS bkg `x10`, provisional (0–409.5) |
 | `RPU_REC_TDLAS_PEAK_BITS` | 8 | TDLAS peak `x10`, provisional (0–25.5) |
