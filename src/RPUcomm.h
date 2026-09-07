@@ -23,6 +23,7 @@ enum RPUMessages_t : uint8_t {
     RPU_SET_V_LOW_BATT,        // RATCHUTS→RPU | threshold(float V)
     RPU_SET_V_CRIT_BATT,       // RATCHUTS→RPU | threshold(float V)
     RPU_SET_STATUS_RATE,       // RATCHUTS→RPU | interval(uint32_t s)
+    RPU_SET_TIME,              // RATCHUTS→RPU | epoch(uint32_t s, Unix UTC)
     RPU_PROFILE_RECORD,        // RATCHUTS→RPU
     RPU_NO_MORE_RECORDS,       // RPU→RATCHUTS
     RPU_STATUS,                // RPU→RATCHUTS | JSON (binary payload, raw string bytes)
@@ -44,6 +45,9 @@ public:
 
     bool TX_SetStatusRate(uint32_t interval);
     bool RX_SetStatusRate(uint32_t * interval);
+
+    bool TX_SetTime(uint32_t epoch);
+    bool RX_SetTime(uint32_t * epoch);
 
 
     // RPU -> RATCHuTS (with params) -----------------------

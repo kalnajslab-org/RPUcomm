@@ -84,6 +84,21 @@ bool RPUComm::RX_SetStatusRate(uint32_t * interval)
     return true;
 }
 
+bool RPUComm::TX_SetTime(uint32_t epoch)
+{
+    if (!Add_uint32(epoch)) return false;
+    TX_ASCII(RPU_SET_TIME);
+    return true;
+}
+
+bool RPUComm::RX_SetTime(uint32_t * epoch)
+{
+    uint32_t temp;
+    if (!Get_uint32(&temp)) return false;
+    *epoch = temp;
+    return true;
+}
+
 bool RPUComm::TX_Status(const char * json)
 {
     uint16_t length = (uint16_t) strlen(json);
