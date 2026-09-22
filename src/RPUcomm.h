@@ -185,9 +185,9 @@ private:
 // ---------------------------------------------------------------------------
 // RPURecord bit-field widths
 // Shared between RPU (encoder) and TMmonster (decoder).
-// Record version 1 — 384 bits = 48 bytes, big-endian, no padding.
+// Record version 2 — 392 bits = 49 bytes, big-endian, no padding.
 //
-// Each RPURecord carries 27 "fast" fields (period = 1, present every record)
+// Each RPURecord carries 28 "fast" fields (period = 1, present every record)
 // plus one fixed-size 40-bit "slot" from a round-robin rotation of 6 "slow"
 // field groups (period = 6 — each slow group is therefore sent roughly once
 // every 6 records). An RPU report is a block header followed by a sequence
@@ -197,7 +197,7 @@ private:
 // fixed RPU_REC_SLOT_BITS regardless of index, so the overall record length
 // never varies.
 // ---------------------------------------------------------------------------
-constexpr uint8_t  RPU_REC_VERSION       = 1;
+constexpr uint8_t  RPU_REC_VERSION       = 2;
 constexpr uint8_t  RPU_REC_VER_BITS      = 4;    // packet format version
 
 // --- Fast fields (period = 1, present in every record) ---------------------
@@ -216,14 +216,15 @@ constexpr uint8_t  RPU_REC_RS41_T_BITS          = 16; // (T + 100) x436.9067  (-
 constexpr uint8_t  RPU_REC_RS41_P_BITS          = 16; // (ln(P) - 3.9120) x21525.87  (50–1050 hPa)
 constexpr uint8_t  RPU_REC_RS41_RH_BITS         = 16; // (RH + 20) x543.1333  (-20 to +100 %RH)
 
-constexpr uint8_t  RPU_REC_TDLAS_VMR_BITS       = 16; // TDLAS VMR_ave x100 (0–655.36)
-constexpr uint8_t  RPU_REC_TDLAS_BKG_BITS       = 12; // TDLAS bkg x10 (0–409.5)
-constexpr uint8_t  RPU_REC_TDLAS_PEAK_BITS      = 8;  // TDLAS peak x10 (0–25.5)
-constexpr uint8_t  RPU_REC_TDLAS_RATIO_BITS     = 10; // TDLAS ratio x1000 (0–1.023)
-constexpr uint8_t  RPU_REC_TDLAS_MAX_VMR_BITS   = 14; // TDLAS max VMR x10 (0–1638.4)
-constexpr uint8_t  RPU_REC_TDLAS_LASER_T_BITS   = 8;  // TDLAS laser temp, °C (0–255)
-constexpr uint8_t  RPU_REC_TDLAS_INDX_BITS      = 4;  // TDLAS spectra index (0–15, instrument data)
-constexpr uint8_t  RPU_REC_TDLAS_SPEC_BITS      = 12; // TDLAS spectra value x1000 (0–4.095), per channel
+constexpr uint8_t  RPU_REC_TDLAS_MIXING_RATIO_BITS = 18; // TDLAS mixing ratio x100 (0–2621.43)
+constexpr uint8_t  RPU_REC_TDLAS_BACKGROUND_BITS   = 12; // TDLAS background, raw counts (0–4095)
+constexpr uint8_t  RPU_REC_TDLAS_PEAK_BITS         = 9;  // TDLAS peak x10 (0–51.1)
+constexpr uint8_t  RPU_REC_TDLAS_RATIO_BITS        = 5;  // TDLAS ratio x10 (0–3.1)
+constexpr uint8_t  RPU_REC_TDLAS_LASER_TEMP_BITS   = 12; // TDLAS laser temp x100 (0–40.95 °C)
+constexpr uint8_t  RPU_REC_TDLAS_MR_MAX_RATIO_BITS = 7;  // TDLAS max mixing ratio x10 (0–12.7)
+constexpr uint8_t  RPU_REC_TDLAS_STATUS_BITS       = 5;  // TDLAS instrument status code (0–31)
+constexpr uint8_t  RPU_REC_TDLAS_CLUSTER_IDX_BITS  = 4;  // TDLAS cluster index (0–15)
+constexpr uint8_t  RPU_REC_TDLAS_CLUSTER_BITS      = 14; // TDLAS cluster value x100 (0–163.83), per channel
 
 // --- Round-robin slow fields (period = 6; one fixed-size slot per record) --
 constexpr uint8_t  RPU_REC_HDG_BITS        = 8;  // RS41 heading, x256/360 (0–360°, ~1.41° res)
@@ -246,7 +247,7 @@ constexpr uint8_t  RPU_REC_RS41_DISCONNECTED_BOOM   = (1u << 7); // E.9: disconn
 constexpr uint8_t  RPU_REC_SLOT_PAD_BITS   = 8;  // padding within the two-field 40-bit slots (indices 0-3)
 constexpr size_t   RPU_REC_SLOT_BITS       = 40; // fixed round-robin slot size
 
-constexpr size_t   RPU_RECORD_BYTES        = 48; // (344 fast + 40 slow) / 8
+constexpr size_t   RPU_RECORD_BYTES        = 49; // (352 fast + 40 slow) / 8
 constexpr size_t   RPU_BLOCK_HDR_BYTES     = 12; // epoch_time (uint32) + gps_lat (int32) + gps_lon (int32)
 
 // ---------------------------------------------------------------------------
@@ -288,17 +289,18 @@ public:
     void setRs41Pres(float millibar);
     void setRs41Humidity(float percent);
     void setRs41HSensorT(float celsius);
-    void setTdlasMrAvg(float value);   // VMR_ave x100 (0–655.36)
-    void setTdlasBkg(float value);     // bkg x10 (0–409.5)
-    void setTdlasPeak(float value);    // peak x10 (0–25.5)
-    void setTdlasRatio(float value);   // ratio x1000 (0–1.023)
-    void setTdlasMaxVmr(float value);  // max VMR x10 (0–1638.4)
-    void setTdlasLaserT(float celsius);// laser temperature (0–255°C)
-    void setTdlasIdx(uint8_t idx);     // instrument data value (0–15)
-    void setTdlasSpec1(float value);   // spectra channel 1 x1000 (0–4.095)
-    void setTdlasSpec2(float value);   // spectra channel 2 x1000 (0–4.095)
-    void setTdlasSpec3(float value);   // spectra channel 3 x1000 (0–4.095)
-    void setTdlasSpec4(float value);   // spectra channel 4 x1000 (0–4.095)
+    void setTdlasMixingRatio(float value); // mixing ratio x100 (0–2621.43)
+    void setTdlasBackground(float value);  // background, raw counts (0–4095)
+    void setTdlasPeak(float value);        // peak x10 (0–51.1)
+    void setTdlasRatio(float value);       // ratio x10 (0–3.1)
+    void setTdlasLaserTemp(float celsius); // laser temperature x100 (0–40.95°C)
+    void setTdlasMrMaxRatio(float value);  // max mixing ratio x10 (0–12.7)
+    void setTdlasStatus(uint8_t status);   // instrument status code (0–31)
+    void setTdlasClusterIdx(uint8_t idx);  // cluster index (0–15)
+    void setTdlasCluster1(float value);    // cluster value 1 x100 (0–163.83)
+    void setTdlasCluster2(float value);    // cluster value 2 x100 (0–163.83)
+    void setTdlasCluster3(float value);    // cluster value 3 x100 (0–163.83)
+    void setTdlasCluster4(float value);    // cluster value 4 x100 (0–163.83)
 
     // Slow / round-robin fields (period = 6)
     void setOpcD500(uint16_t count);
@@ -340,17 +342,18 @@ public:
     float    getRs41Humidity() const { return (rs41_humidity_raw_ / 543.1333f) - 20.0f; }
     float    getRs41HSensorT() const { return (rs41_hsensor_t_raw_ / 436.9067f) - 100.0f; }
 
-    float    getTdlasMrAvg()   const { return tdlas_mr_avg_raw_ / 100.0f; }
-    float    getTdlasBkg()     const { return tdlas_bkg_raw_ / 10.0f; }
-    float    getTdlasPeak()    const { return tdlas_peak_raw_ / 10.0f; }
-    float    getTdlasRatio()   const { return tdlas_ratio_raw_ / 1000.0f; }
-    float    getTdlasMaxVmr()  const { return tdlas_max_vmr_raw_ / 10.0f; }
-    float    getTdlasLaserT()  const { return (float)tdlas_laser_t_raw_; }
-    uint8_t  getTdlasIdx()     const { return tdlas_idx_; }
-    float    getTdlasSpec1()   const { return tdlas_spec_1_raw_ / 1000.0f; }
-    float    getTdlasSpec2()   const { return tdlas_spec_2_raw_ / 1000.0f; }
-    float    getTdlasSpec3()   const { return tdlas_spec_3_raw_ / 1000.0f; }
-    float    getTdlasSpec4()   const { return tdlas_spec_4_raw_ / 1000.0f; }
+    float    getTdlasMixingRatio() const { return tdlas_mixing_ratio_raw_ / 100.0f; }
+    float    getTdlasBackground() const { return (float)tdlas_background_raw_; }
+    float    getTdlasPeak()       const { return tdlas_peak_raw_ / 10.0f; }
+    float    getTdlasRatio()      const { return tdlas_ratio_raw_ / 10.0f; }
+    float    getTdlasLaserTemp()  const { return tdlas_laser_temp_raw_ / 100.0f; }
+    float    getTdlasMrMaxRatio() const { return tdlas_mr_max_ratio_raw_ / 10.0f; }
+    uint8_t  getTdlasStatus()     const { return tdlas_status_; }
+    uint8_t  getTdlasClusterIdx() const { return tdlas_cluster_idx_; }
+    float    getTdlasCluster1()   const { return tdlas_cluster_1_raw_ / 100.0f; }
+    float    getTdlasCluster2()   const { return tdlas_cluster_2_raw_ / 100.0f; }
+    float    getTdlasCluster3()   const { return tdlas_cluster_3_raw_ / 100.0f; }
+    float    getTdlasCluster4()   const { return tdlas_cluster_4_raw_ / 100.0f; }
 
     // Slow / round-robin fields
     uint16_t getOpcD500()      const { return opc_d500_; }
@@ -417,17 +420,18 @@ private:
     uint16_t rs41_pres_raw_      = 0; // (ln(P) - 3.9120) x21525.87, 50-1050 hPa
     uint16_t rs41_humidity_raw_  = 0; // (RH + 20) x543.1333, -20 to +100 %RH
     uint16_t rs41_hsensor_t_raw_ = 0; // (T + 100) x436.9067, -100 to +50 °C
-    uint16_t tdlas_mr_avg_raw_   = 0; // x100 (0-655.36)
-    uint16_t tdlas_bkg_raw_      = 0; // x10 (0-409.5)
-    uint8_t  tdlas_peak_raw_     = 0; // x10 (0-25.5)
-    uint16_t tdlas_ratio_raw_    = 0; // x1000 (0-1.023)
-    uint16_t tdlas_max_vmr_raw_  = 0; // x10, 14 bits (0-1638.4)
-    uint8_t  tdlas_laser_t_raw_  = 0; // °C
-    uint8_t  tdlas_idx_          = 0; // 0-15, instrument data value
-    uint16_t tdlas_spec_1_raw_   = 0; // x1000, 12 bits (0-4.095)
-    uint16_t tdlas_spec_2_raw_   = 0; // x1000, 12 bits (0-4.095)
-    uint16_t tdlas_spec_3_raw_   = 0; // x1000, 12 bits (0-4.095)
-    uint16_t tdlas_spec_4_raw_   = 0; // x1000, 12 bits (0-4.095)
+    uint32_t tdlas_mixing_ratio_raw_ = 0; // x100, 18 bits (0-2621.43)
+    uint16_t tdlas_background_raw_  = 0; // raw counts, 12 bits (0-4095)
+    uint16_t tdlas_peak_raw_        = 0; // x10, 9 bits (0-51.1)
+    uint8_t  tdlas_ratio_raw_       = 0; // x10, 5 bits (0-3.1)
+    uint16_t tdlas_laser_temp_raw_  = 0; // x100, 12 bits (0-40.95 °C)
+    uint8_t  tdlas_mr_max_ratio_raw_ = 0; // x10, 7 bits (0-12.7)
+    uint8_t  tdlas_status_          = 0; // 0-31, instrument status code
+    uint8_t  tdlas_cluster_idx_     = 0; // 0-15, cluster index
+    uint16_t tdlas_cluster_1_raw_   = 0; // x100, 14 bits (0-163.83)
+    uint16_t tdlas_cluster_2_raw_   = 0; // x100, 14 bits (0-163.83)
+    uint16_t tdlas_cluster_3_raw_   = 0; // x100, 14 bits (0-163.83)
+    uint16_t tdlas_cluster_4_raw_   = 0; // x100, 14 bits (0-163.83)
     // Current round-robin slot (0-7), advanced via resetRotation()/advanceRotation().
     uint8_t  round_robin_idx_    = 0;
 

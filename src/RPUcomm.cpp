@@ -305,17 +305,18 @@ void RPURecord::setRs41AirT(float celsius)     { rs41_air_t_raw_     = (uint16_t
 void RPURecord::setRs41Pres(float millibar)    { rs41_pres_raw_      = (millibar > 0.0f) ? (uint16_t)constrain((int)((logf(millibar) - 3.9120f) * 21525.87f), 0, 65535) : 0; }
 void RPURecord::setRs41Humidity(float percent) { rs41_humidity_raw_  = (uint16_t)constrain((int)((percent + 20.0f) * 543.1333f), 0, 65535); }
 void RPURecord::setRs41HSensorT(float celsius) { rs41_hsensor_t_raw_ = (uint16_t)constrain((int)((celsius + 100.0f) * 436.9067f), 0, 65535); }
-void RPURecord::setTdlasMrAvg(float value)     { tdlas_mr_avg_raw_  = (uint16_t)constrain((int)(value * 100.0f), 0, 65535); }
-void RPURecord::setTdlasBkg(float value)       { tdlas_bkg_raw_     = (uint16_t)constrain((int)(value * 10.0f), 0, 4095); }
-void RPURecord::setTdlasPeak(float value)      { tdlas_peak_raw_    = (uint8_t)constrain((int)(value * 10.0f), 0, 255); }
-void RPURecord::setTdlasRatio(float value)     { tdlas_ratio_raw_   = (uint16_t)constrain((int)(value * 1000.0f), 0, 1023); }
-void RPURecord::setTdlasMaxVmr(float value)    { tdlas_max_vmr_raw_ = (uint16_t)constrain((int)(value * 10.0f), 0, 16383); }
-void RPURecord::setTdlasLaserT(float celsius)  { tdlas_laser_t_raw_ = (uint8_t)constrain((int)celsius, 0, 255); }
-void RPURecord::setTdlasIdx(uint8_t idx)       { tdlas_idx_         = (uint8_t)constrain((int)idx, 0, 15); }
-void RPURecord::setTdlasSpec1(float value)     { tdlas_spec_1_raw_  = (uint16_t)constrain((int)(value * 1000.0f), 0, 4095); }
-void RPURecord::setTdlasSpec2(float value)     { tdlas_spec_2_raw_  = (uint16_t)constrain((int)(value * 1000.0f), 0, 4095); }
-void RPURecord::setTdlasSpec3(float value)     { tdlas_spec_3_raw_  = (uint16_t)constrain((int)(value * 1000.0f), 0, 4095); }
-void RPURecord::setTdlasSpec4(float value)     { tdlas_spec_4_raw_  = (uint16_t)constrain((int)(value * 1000.0f), 0, 4095); }
+void RPURecord::setTdlasMixingRatio(float value) { tdlas_mixing_ratio_raw_  = (uint32_t)constrain((long)(value * 100.0f), 0L, 262143L); }
+void RPURecord::setTdlasBackground(float value)  { tdlas_background_raw_   = (uint16_t)constrain((int)value, 0, 4095); }
+void RPURecord::setTdlasPeak(float value)        { tdlas_peak_raw_         = (uint16_t)constrain((int)(value * 10.0f), 0, 511); }
+void RPURecord::setTdlasRatio(float value)       { tdlas_ratio_raw_        = (uint8_t)constrain((int)(value * 10.0f), 0, 31); }
+void RPURecord::setTdlasLaserTemp(float celsius) { tdlas_laser_temp_raw_   = (uint16_t)constrain((int)(celsius * 100.0f), 0, 4095); }
+void RPURecord::setTdlasMrMaxRatio(float value)  { tdlas_mr_max_ratio_raw_ = (uint8_t)constrain((int)(value * 10.0f), 0, 127); }
+void RPURecord::setTdlasStatus(uint8_t status)   { tdlas_status_           = (uint8_t)constrain((int)status, 0, 31); }
+void RPURecord::setTdlasClusterIdx(uint8_t idx)  { tdlas_cluster_idx_      = (uint8_t)constrain((int)idx, 0, 15); }
+void RPURecord::setTdlasCluster1(float value)    { tdlas_cluster_1_raw_    = (uint16_t)constrain((int)(value * 100.0f), 0, 16383); }
+void RPURecord::setTdlasCluster2(float value)    { tdlas_cluster_2_raw_    = (uint16_t)constrain((int)(value * 100.0f), 0, 16383); }
+void RPURecord::setTdlasCluster3(float value)    { tdlas_cluster_3_raw_    = (uint16_t)constrain((int)(value * 100.0f), 0, 16383); }
+void RPURecord::setTdlasCluster4(float value)    { tdlas_cluster_4_raw_    = (uint16_t)constrain((int)(value * 100.0f), 0, 16383); }
 
 // Slow / round-robin fields (period = 8) ---------------------
 void RPURecord::setOpcD500(uint16_t count)     { opc_d500_  = count; }
@@ -364,17 +365,18 @@ bool RPURecord::encode(uint8_t * buf, size_t buf_size) const
     bsw.write_unchecked<uint16_t>(rs41_pres_raw_,    RPU_REC_RS41_P_BITS);
     bsw.write_unchecked<uint16_t>(rs41_humidity_raw_,RPU_REC_RS41_RH_BITS);
     bsw.write_unchecked<uint16_t>(rs41_hsensor_t_raw_, RPU_REC_RS41_T_BITS);
-    bsw.write_unchecked<uint16_t>(tdlas_mr_avg_raw_,   RPU_REC_TDLAS_VMR_BITS);
-    bsw.write_unchecked<uint16_t>(tdlas_bkg_raw_,      RPU_REC_TDLAS_BKG_BITS);
-    bsw.write_unchecked<uint8_t> (tdlas_peak_raw_,     RPU_REC_TDLAS_PEAK_BITS);
-    bsw.write_unchecked<uint16_t>(tdlas_ratio_raw_,    RPU_REC_TDLAS_RATIO_BITS);
-    bsw.write_unchecked<uint16_t>(tdlas_max_vmr_raw_,  RPU_REC_TDLAS_MAX_VMR_BITS);
-    bsw.write_unchecked<uint8_t> (tdlas_laser_t_raw_,  RPU_REC_TDLAS_LASER_T_BITS);
-    bsw.write_unchecked<uint16_t>(tdlas_spec_1_raw_,  RPU_REC_TDLAS_SPEC_BITS);
-    bsw.write_unchecked<uint16_t>(tdlas_spec_2_raw_,  RPU_REC_TDLAS_SPEC_BITS);
-    bsw.write_unchecked<uint16_t>(tdlas_spec_3_raw_,  RPU_REC_TDLAS_SPEC_BITS);
-    bsw.write_unchecked<uint16_t>(tdlas_spec_4_raw_,  RPU_REC_TDLAS_SPEC_BITS);
-    bsw.write_unchecked<uint8_t> (tdlas_idx_,         RPU_REC_TDLAS_INDX_BITS);
+    bsw.write_unchecked<uint32_t>(tdlas_mixing_ratio_raw_, RPU_REC_TDLAS_MIXING_RATIO_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_background_raw_,   RPU_REC_TDLAS_BACKGROUND_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_peak_raw_,         RPU_REC_TDLAS_PEAK_BITS);
+    bsw.write_unchecked<uint8_t> (tdlas_ratio_raw_,        RPU_REC_TDLAS_RATIO_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_laser_temp_raw_,   RPU_REC_TDLAS_LASER_TEMP_BITS);
+    bsw.write_unchecked<uint8_t> (tdlas_mr_max_ratio_raw_, RPU_REC_TDLAS_MR_MAX_RATIO_BITS);
+    bsw.write_unchecked<uint8_t> (tdlas_status_,           RPU_REC_TDLAS_STATUS_BITS);
+    bsw.write_unchecked<uint8_t> (tdlas_cluster_idx_,      RPU_REC_TDLAS_CLUSTER_IDX_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_cluster_1_raw_,    RPU_REC_TDLAS_CLUSTER_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_cluster_2_raw_,    RPU_REC_TDLAS_CLUSTER_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_cluster_3_raw_,    RPU_REC_TDLAS_CLUSTER_BITS);
+    bsw.write_unchecked<uint16_t>(tdlas_cluster_4_raw_,    RPU_REC_TDLAS_CLUSTER_BITS);
 
     // Slow / round-robin fields (period = 8) — one 40-bit slot per record
     switch (round_robin_idx_) {
@@ -443,17 +445,18 @@ bool RPURecord::decode(const uint8_t * buf, size_t buf_size)
     rs41_pres_raw_      = bsr.read_unchecked<uint16_t>(RPU_REC_RS41_P_BITS);
     rs41_humidity_raw_  = bsr.read_unchecked<uint16_t>(RPU_REC_RS41_RH_BITS);
     rs41_hsensor_t_raw_ = bsr.read_unchecked<uint16_t>(RPU_REC_RS41_T_BITS);
-    tdlas_mr_avg_raw_   = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_VMR_BITS);
-    tdlas_bkg_raw_      = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_BKG_BITS);
-    tdlas_peak_raw_     = bsr.read_unchecked<uint8_t> (RPU_REC_TDLAS_PEAK_BITS);
-    tdlas_ratio_raw_    = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_RATIO_BITS);
-    tdlas_max_vmr_raw_  = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_MAX_VMR_BITS);
-    tdlas_laser_t_raw_  = bsr.read_unchecked<uint8_t> (RPU_REC_TDLAS_LASER_T_BITS);
-    tdlas_spec_1_raw_   = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_SPEC_BITS);
-    tdlas_spec_2_raw_   = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_SPEC_BITS);
-    tdlas_spec_3_raw_   = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_SPEC_BITS);
-    tdlas_spec_4_raw_   = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_SPEC_BITS);
-    tdlas_idx_          = bsr.read_unchecked<uint8_t> (RPU_REC_TDLAS_INDX_BITS);
+    tdlas_mixing_ratio_raw_ = bsr.read_unchecked<uint32_t>(RPU_REC_TDLAS_MIXING_RATIO_BITS);
+    tdlas_background_raw_   = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_BACKGROUND_BITS);
+    tdlas_peak_raw_         = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_PEAK_BITS);
+    tdlas_ratio_raw_        = bsr.read_unchecked<uint8_t> (RPU_REC_TDLAS_RATIO_BITS);
+    tdlas_laser_temp_raw_   = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_LASER_TEMP_BITS);
+    tdlas_mr_max_ratio_raw_ = bsr.read_unchecked<uint8_t> (RPU_REC_TDLAS_MR_MAX_RATIO_BITS);
+    tdlas_status_           = bsr.read_unchecked<uint8_t> (RPU_REC_TDLAS_STATUS_BITS);
+    tdlas_cluster_idx_      = bsr.read_unchecked<uint8_t> (RPU_REC_TDLAS_CLUSTER_IDX_BITS);
+    tdlas_cluster_1_raw_    = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_CLUSTER_BITS);
+    tdlas_cluster_2_raw_    = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_CLUSTER_BITS);
+    tdlas_cluster_3_raw_    = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_CLUSTER_BITS);
+    tdlas_cluster_4_raw_    = bsr.read_unchecked<uint16_t>(RPU_REC_TDLAS_CLUSTER_BITS);
 
     // Slow / round-robin fields (period = 8) — one 40-bit slot per record
     switch (round_robin_idx_) {
@@ -506,9 +509,9 @@ String RPURecord::toJSON() const
         "\"opc_d300\":%u,\"opc_d2000\":%u,"
         "\"tsen_airt\":%u,\"tsen_pres\":%u,\"tsen_ptemp\":%u,"
         "\"rs41_air_t\":%.2f,\"rs41_pres\":%.1f,\"rs41_humidity\":%.2f,\"rs41_hsensor_t\":%.2f,"
-        "\"tdlas_mr_avg\":%.2f,\"tdlas_bkg\":%.1f,\"tdlas_peak\":%.1f,\"tdlas_ratio\":%.3f,"
-        "\"tdlas_max_vmr\":%.1f,\"tdlas_laser_t\":%.0f,"
-        "\"tdlas_spec1\":%.3f,\"tdlas_spec2\":%.3f,\"tdlas_spec3\":%.3f,\"tdlas_spec4\":%.3f,\"tdlas_idx\":%u,"
+        "\"tdlas_mixing_ratio\":%.2f,\"tdlas_background\":%.0f,\"tdlas_peak\":%.1f,\"tdlas_ratio\":%.1f,"
+        "\"tdlas_laser_temp\":%.2f,\"tdlas_mr_max_ratio\":%.1f,\"tdlas_status\":%u,\"tdlas_cluster_idx\":%u,"
+        "\"tdlas_cluster1\":%.2f,\"tdlas_cluster2\":%.2f,\"tdlas_cluster3\":%.2f,\"tdlas_cluster4\":%.2f,"
         "\"round_robin_idx\":%u,"
         "\"opc_d500\":%u,\"opc_d700\":%u,\"opc_d1000\":%u,\"opc_d3000\":%u,\"opc_d5000\":%u,\"opc_d2500\":%u,"
         "\"rs41_hdg\":%.2f,\"bemf_v\":%.3f,\"rs41_status\":%u,"
@@ -519,9 +522,9 @@ String RPURecord::toJSON() const
         opc_d300_, opc_d2000_,
         tsen_airt_raw_, tsen_pres_raw_, tsen_ptemp_raw_,
         getRs41AirT(), getRs41Pres(), getRs41Humidity(), getRs41HSensorT(),
-        getTdlasMrAvg(), getTdlasBkg(), getTdlasPeak(), getTdlasRatio(),
-        getTdlasMaxVmr(), getTdlasLaserT(),
-        getTdlasSpec1(), getTdlasSpec2(), getTdlasSpec3(), getTdlasSpec4(), getTdlasIdx(),
+        getTdlasMixingRatio(), getTdlasBackground(), getTdlasPeak(), getTdlasRatio(),
+        getTdlasLaserTemp(), getTdlasMrMaxRatio(), getTdlasStatus(), getTdlasClusterIdx(),
+        getTdlasCluster1(), getTdlasCluster2(), getTdlasCluster3(), getTdlasCluster4(),
         round_robin_idx_,
         opc_d500_, opc_d700_, opc_d1000_, opc_d3000_, opc_d5000_, opc_d2500_,
         getRs41Hdg(), getBemfV(), rs41_status_,

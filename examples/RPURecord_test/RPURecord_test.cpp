@@ -12,7 +12,7 @@ void setUp(void) {}
 void tearDown(void) {}
 
 void test_record_size_constant() {
-    TEST_ASSERT_EQUAL_UINT32(48, RPU_RECORD_BYTES);
+    TEST_ASSERT_EQUAL_UINT32(49, RPU_RECORD_BYTES);
 }
 
 void test_buffer_too_small() {
@@ -39,17 +39,18 @@ void test_fast_field_roundtrip() {
     rec.setRs41Pres(987.6f);
     rec.setRs41Humidity(55.55f);
     rec.setRs41HSensorT(10.0f);
-    rec.setTdlasMrAvg(50.0f);
-    rec.setTdlasBkg(20.0f);
+    rec.setTdlasMixingRatio(50.0f);
+    rec.setTdlasBackground(20.0f);
     rec.setTdlasPeak(12.0f);
     rec.setTdlasRatio(0.5f);
-    rec.setTdlasMaxVmr(123.4f);
-    rec.setTdlasLaserT(42.0f);
-    rec.setTdlasIdx(11);
-    rec.setTdlasSpec1(1.234f);
-    rec.setTdlasSpec2(2.345f);
-    rec.setTdlasSpec3(0.001f);
-    rec.setTdlasSpec4(4.094f);
+    rec.setTdlasLaserTemp(25.5f);
+    rec.setTdlasMrMaxRatio(8.5f);
+    rec.setTdlasStatus(5);
+    rec.setTdlasClusterIdx(11);
+    rec.setTdlasCluster1(12.34f);
+    rec.setTdlasCluster2(23.45f);
+    rec.setTdlasCluster3(0.01f);
+    rec.setTdlasCluster4(140.94f);
 
     uint8_t buf[RPU_RECORD_BYTES];
     TEST_ASSERT_TRUE(rec.encode(buf, sizeof(buf)));
@@ -72,17 +73,18 @@ void test_fast_field_roundtrip() {
     TEST_ASSERT_FLOAT_WITHIN(0.05f, 987.6f, decoded.getRs41Pres());
     TEST_ASSERT_FLOAT_WITHIN(0.005f, 55.55f, decoded.getRs41Humidity());
     TEST_ASSERT_FLOAT_WITHIN(0.005f, 10.0f, decoded.getRs41HSensorT());
-    TEST_ASSERT_FLOAT_WITHIN(0.005f, 50.0f,  decoded.getTdlasMrAvg());
-    TEST_ASSERT_FLOAT_WITHIN(0.05f,  20.0f,  decoded.getTdlasBkg());
-    TEST_ASSERT_FLOAT_WITHIN(0.05f,  12.0f,  decoded.getTdlasPeak());
-    TEST_ASSERT_FLOAT_WITHIN(0.0005f, 0.5f,  decoded.getTdlasRatio());
-    TEST_ASSERT_FLOAT_WITHIN(0.05f,  123.4f, decoded.getTdlasMaxVmr());
-    TEST_ASSERT_FLOAT_WITHIN(0.5f,    42.0f,  decoded.getTdlasLaserT());
-    TEST_ASSERT_EQUAL_UINT8(11,               decoded.getTdlasIdx());
-    TEST_ASSERT_FLOAT_WITHIN(0.0005f, 1.234f, decoded.getTdlasSpec1());
-    TEST_ASSERT_FLOAT_WITHIN(0.0005f, 2.345f, decoded.getTdlasSpec2());
-    TEST_ASSERT_FLOAT_WITHIN(0.0005f, 0.001f, decoded.getTdlasSpec3());
-    TEST_ASSERT_FLOAT_WITHIN(0.0005f, 4.094f, decoded.getTdlasSpec4());
+    TEST_ASSERT_FLOAT_WITHIN(0.005f, 50.0f,   decoded.getTdlasMixingRatio());
+    TEST_ASSERT_FLOAT_WITHIN(0.5f,   20.0f,   decoded.getTdlasBackground());
+    TEST_ASSERT_FLOAT_WITHIN(0.05f,  12.0f,   decoded.getTdlasPeak());
+    TEST_ASSERT_FLOAT_WITHIN(0.05f,  0.5f,    decoded.getTdlasRatio());
+    TEST_ASSERT_FLOAT_WITHIN(0.005f, 25.5f,   decoded.getTdlasLaserTemp());
+    TEST_ASSERT_FLOAT_WITHIN(0.05f,  8.5f,    decoded.getTdlasMrMaxRatio());
+    TEST_ASSERT_EQUAL_UINT8(5,                 decoded.getTdlasStatus());
+    TEST_ASSERT_EQUAL_UINT8(11,                decoded.getTdlasClusterIdx());
+    TEST_ASSERT_FLOAT_WITHIN(0.005f, 12.34f,  decoded.getTdlasCluster1());
+    TEST_ASSERT_FLOAT_WITHIN(0.005f, 23.45f,  decoded.getTdlasCluster2());
+    TEST_ASSERT_FLOAT_WITHIN(0.005f, 0.01f,   decoded.getTdlasCluster3());
+    TEST_ASSERT_FLOAT_WITHIN(0.005f, 140.94f, decoded.getTdlasCluster4());
 }
 
 // Sets every slow/round-robin field to a fixed test value, regardless of which
