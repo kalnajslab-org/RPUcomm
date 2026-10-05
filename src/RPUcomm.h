@@ -197,7 +197,7 @@ private:
 // fixed RPU_REC_SLOT_BITS regardless of index, so the overall record length
 // never varies.
 // ---------------------------------------------------------------------------
-constexpr uint8_t  RPU_REC_VERSION       = 2;
+constexpr uint8_t  RPU_REC_VERSION       = 3;
 constexpr uint8_t  RPU_REC_VER_BITS      = 4;    // packet format version
 
 // --- Fast fields (period = 1, present in every record) ---------------------
@@ -213,7 +213,7 @@ constexpr uint8_t  RPU_REC_OPC_BITS             = 16; // OPC bin counts, raw
 constexpr uint8_t  RPU_REC_TSEN_BITS            = 16; // TSEN raw counts (airt: 0–4095; pres/ptemp: top 16 bits of 24-bit count)
 
 constexpr uint8_t  RPU_REC_RS41_T_BITS          = 16; // (T + 100) x436.9067  (-100 to +50 °C)
-constexpr uint8_t  RPU_REC_RS41_P_BITS          = 16; // (ln(P) - 3.9120) x21525.87  (50–1050 hPa)
+constexpr uint8_t  RPU_REC_RS41_P_BITS          = 16; // (ln(P) - 3.4012) x18533.04  (30–1030 hPa)
 constexpr uint8_t  RPU_REC_RS41_RH_BITS         = 16; // (RH + 20) x543.1333  (-20 to +100 %RH)
 
 constexpr uint8_t  RPU_REC_TDLAS_MIXING_RATIO_BITS = 18; // TDLAS mixing ratio x100 (0–2621.43)
@@ -338,7 +338,7 @@ public:
     uint16_t getTsenPres()     const { return tsen_pres_raw_; }
     uint16_t getTsenPtemp()    const { return tsen_ptemp_raw_; }
     float    getRs41AirT()     const { return (rs41_air_t_raw_ / 436.9067f) - 100.0f; }
-    float    getRs41Pres()     const { return expf((rs41_pres_raw_ / 21525.87f) + 3.9120f); }
+    float    getRs41Pres()     const { return expf((rs41_pres_raw_ / 18533.04f) + 3.4012f); }
     float    getRs41Humidity() const { return (rs41_humidity_raw_ / 543.1333f) - 20.0f; }
     float    getRs41HSensorT() const { return (rs41_hsensor_t_raw_ / 436.9067f) - 100.0f; }
 
@@ -417,7 +417,7 @@ private:
     uint16_t tsen_pres_raw_      = 0; // top 16 bits of raw 24-bit count
     uint16_t tsen_ptemp_raw_     = 0; // top 16 bits of raw 24-bit count
     uint16_t rs41_air_t_raw_     = 0; // (T + 100) x436.9067, -100 to +50 °C
-    uint16_t rs41_pres_raw_      = 0; // (ln(P) - 3.9120) x21525.87, 50-1050 hPa
+    uint16_t rs41_pres_raw_      = 0; // (ln(P) - 3.4012) x18533.04, 30-1030 hPa
     uint16_t rs41_humidity_raw_  = 0; // (RH + 20) x543.1333, -20 to +100 %RH
     uint16_t rs41_hsensor_t_raw_ = 0; // (T + 100) x436.9067, -100 to +50 °C
     uint32_t tdlas_mixing_ratio_raw_ = 0; // x100, 18 bits (0-2621.43)

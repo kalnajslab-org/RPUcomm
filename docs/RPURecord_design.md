@@ -6,7 +6,7 @@ This document records the design discussion and scaling decisions behind the
 ## Goal
 
 `RPURecord` bit-packs one `tickMeasure()` sample into a **fixed 49-byte
-(392-bit) record**. This is `RPU_REC_VERSION = 2`, which finalizes the TDLAS
+(392-bit) record**. This is `RPU_REC_VERSION = 3`, which finalizes the TDLAS
 field layout (see "TDLAS scaling" below) that `RPU_REC_VERSION = 1` carried as
 provisional placeholders.
 
@@ -47,7 +47,7 @@ Present in every record, in this order:
 
 | # | Field | Setter / Getter | Encoding | Bits |
 |---|---|---|---|---|
-| — | record format version | encoded internally | fixed value `RPU_REC_VERSION = 2` | 4 |
+| — | record format version | encoded internally | fixed value `RPU_REC_VERSION = 3` | 4 |
 | 1 | round-robin index | managed internally (see "Round-robin cycling") | 0–5, selects which slow-field slot follows | 4 |
 | 2 | elapsed time | `setElapsedS`/`getElapsedS` | seconds since `MeasureStartMillis`, raw uint16 (0–65535 s) | 16 |
 | 3 | GPS altitude | `setAlt`/`getAlt` | meters, raw uint16 | 16 |
@@ -61,7 +61,7 @@ Present in every record, in this order:
 | 11 | TSEN pressure | `setTsenPres`/`getTsenPres` | top 16 bits of raw 24-bit count | 16 |
 | 12 | TSEN temp-of-pressure | `setTsenPtemp`/`getTsenPtemp` | top 16 bits of raw 24-bit count | 16 |
 | 13 | RS41 air temperature | `setRs41AirT`/`getRs41AirT` | `(T+100) x436.9067`, -100 to +50 °C | 16 |
-| 14 | RS41 pressure | `setRs41Pres`/`getRs41Pres` | `(ln(P) - 3.9120) x21525.87`, 50–1050 hPa | 16 |
+| 14 | RS41 pressure | `setRs41Pres`/`getRs41Pres` | `(ln(P) - 3.4012) x18533.04`, 30–1030 hPa | 16 |
 | 15 | RS41 RH | `setRs41Humidity`/`getRs41Humidity` | `(RH+20) x543.1333`, -20 to +100 %RH | 16 |
 | 16 | RS41 temp-of-RH | `setRs41HSensorT`/`getRs41HSensorT` | `(T+100) x436.9067`, -100 to +50 °C | 16 |
 | 17 | TDLAS mixing ratio | `setTdlasMixingRatio`/`getTdlasMixingRatio` | `x100`, 0–2621.43 | 18 |
@@ -228,7 +228,7 @@ slot) = **392 bits = 49 bytes** (`RPU_RECORD_BYTES`), no padding needed.
 
 | Constant | Bits | Used for |
 |---|---|---|
-| `RPU_REC_VER_BITS` | 4 | record format version (`RPU_REC_VERSION = 2`) |
+| `RPU_REC_VER_BITS` | 4 | record format version (`RPU_REC_VERSION = 3`) |
 | `RPU_REC_RR_IDX_BITS` | 4 | round-robin slot index (0–5) |
 | `RPU_REC_ELAPSED_BITS` | 16 | elapsed seconds since `MeasureStartMillis` |
 | `RPU_REC_ALT_BITS` | 16 | altitude, m, raw |
@@ -238,7 +238,7 @@ slot) = **392 bits = 49 bytes** (`RPU_RECORD_BYTES`), no padding needed.
 | `RPU_REC_OPC_BITS` | 16 | OPC bin counts, raw |
 | `RPU_REC_TSEN_BITS` | 16 | TSEN raw counts (airt: 0–4095; pres/ptemp: top 16 bits of 24-bit count) |
 | `RPU_REC_RS41_T_BITS` | 16 | `(T+100) x436.9067` (-100 to +50 °C) |
-| `RPU_REC_RS41_P_BITS` | 16 | `(ln(P) - 3.9120) x21525.87` (50–1050 hPa) |
+| `RPU_REC_RS41_P_BITS` | 16 | `(ln(P) - 3.4012) x18533.04` (30–1030 hPa) |
 | `RPU_REC_RS41_RH_BITS` | 16 | `(RH+20) x543.1333` (-20 to +100 %RH) |
 | `RPU_REC_TDLAS_MIXING_RATIO_BITS` | 18 | TDLAS mixing ratio `x100` (0–2621.43) |
 | `RPU_REC_TDLAS_BACKGROUND_BITS` | 12 | TDLAS background, raw counts (0–4095) |
@@ -278,3 +278,5 @@ slot) = **392 bits = 49 bytes** (`RPU_RECORD_BYTES`), no padding needed.
   `background`, `peak`, `ratio`, `laser_temp`, `mr_max_ratio`, `status`,
   `cluster_idx`, `cluster_1`–`4`) and widened the TDLAS fast-field block from
   120 to 128 bits, growing the record from 48 to 49 bytes.
+- **v3** (`RPU_REC_VERSION = 3`): RS41 pressure re-scaled to `(ln(P) - 3.4012) x18533.04`
+  (30–1030 hPa, was 50–1050 hPa). Layout and record size unchanged.
