@@ -299,8 +299,8 @@ void RPURecord::setGpsAge(uint32_t seconds)    { gps_age_s_     = (uint8_t)const
 void RPURecord::setOpcD300(uint16_t count)     { opc_d300_      = count; }
 void RPURecord::setOpcD2000(uint16_t count)    { opc_d2000_     = count; }
 void RPURecord::setTsenAirt(uint16_t raw)      { tsen_airt_raw_  = (uint16_t)constrain((int)raw, 0, 0xFFF); }
-void RPURecord::setTsenPres(uint32_t raw)      { tsen_pres_raw_  = (uint16_t)(constrain((long)raw, 0L, 0xFFFFFFL) >> 8); }
-void RPURecord::setTsenPtemp(uint32_t raw)     { tsen_ptemp_raw_ = (uint16_t)(constrain((long)raw, 0L, 0xFFFFFFL) >> 8); }
+void RPURecord::setTsenPres(uint32_t raw)      { tsen_pres_raw_  = (uint32_t)constrain((long)raw, 0L, 0xFFFFFFL); }
+void RPURecord::setTsenPtemp(uint32_t raw)     { tsen_ptemp_raw_ = (uint32_t)constrain((long)raw, 0L, 0xFFFFFFL); }
 void RPURecord::setRs41AirT(float celsius)     { rs41_air_t_raw_     = (uint16_t)constrain((int)((celsius + 100.0f) * 436.9067f), 0, 65535); }
 void RPURecord::setRs41Pres(float millibar)    { rs41_pres_raw_      = (millibar > 0.0f) ? (uint16_t)constrain((int)((logf(millibar) - 3.4012f) * 18533.04f), 0, 65535) : 0; }
 void RPURecord::setRs41Humidity(float percent) { rs41_humidity_raw_  = (uint16_t)constrain((int)((percent + 20.0f) * 543.1333f), 0, 65535); }
@@ -358,9 +358,9 @@ bool RPURecord::encode(uint8_t * buf, size_t buf_size) const
     bsw.write_unchecked<uint8_t> (gps_age_s_,        RPU_REC_GPS_AGE_BITS);
     bsw.write_unchecked<uint16_t>(opc_d300_,         RPU_REC_OPC_BITS);
     bsw.write_unchecked<uint16_t>(opc_d2000_,        RPU_REC_OPC_BITS);
-    bsw.write_unchecked<uint16_t>(tsen_airt_raw_,    RPU_REC_TSEN_BITS);
-    bsw.write_unchecked<uint16_t>(tsen_pres_raw_,    RPU_REC_TSEN_BITS);
-    bsw.write_unchecked<uint16_t>(tsen_ptemp_raw_,   RPU_REC_TSEN_BITS);
+    bsw.write_unchecked<uint16_t>(tsen_airt_raw_,    RPU_REC_TSEN_AIRT_BITS);
+    bsw.write_unchecked<uint32_t>(tsen_pres_raw_,    RPU_REC_TSEN_PRES_BITS);
+    bsw.write_unchecked<uint32_t>(tsen_ptemp_raw_,   RPU_REC_TSEN_PTEMP_BITS);
     bsw.write_unchecked<uint16_t>(rs41_air_t_raw_,   RPU_REC_RS41_T_BITS);
     bsw.write_unchecked<uint16_t>(rs41_pres_raw_,    RPU_REC_RS41_P_BITS);
     bsw.write_unchecked<uint16_t>(rs41_humidity_raw_,RPU_REC_RS41_RH_BITS);
@@ -438,9 +438,9 @@ bool RPURecord::decode(const uint8_t * buf, size_t buf_size)
     gps_age_s_          = bsr.read_unchecked<uint8_t> (RPU_REC_GPS_AGE_BITS);
     opc_d300_           = bsr.read_unchecked<uint16_t>(RPU_REC_OPC_BITS);
     opc_d2000_          = bsr.read_unchecked<uint16_t>(RPU_REC_OPC_BITS);
-    tsen_airt_raw_      = bsr.read_unchecked<uint16_t>(RPU_REC_TSEN_BITS);
-    tsen_pres_raw_      = bsr.read_unchecked<uint16_t>(RPU_REC_TSEN_BITS);
-    tsen_ptemp_raw_     = bsr.read_unchecked<uint16_t>(RPU_REC_TSEN_BITS);
+    tsen_airt_raw_      = bsr.read_unchecked<uint16_t>(RPU_REC_TSEN_AIRT_BITS);
+    tsen_pres_raw_      = bsr.read_unchecked<uint32_t>(RPU_REC_TSEN_PRES_BITS);
+    tsen_ptemp_raw_     = bsr.read_unchecked<uint32_t>(RPU_REC_TSEN_PTEMP_BITS);
     rs41_air_t_raw_     = bsr.read_unchecked<uint16_t>(RPU_REC_RS41_T_BITS);
     rs41_pres_raw_      = bsr.read_unchecked<uint16_t>(RPU_REC_RS41_P_BITS);
     rs41_humidity_raw_  = bsr.read_unchecked<uint16_t>(RPU_REC_RS41_RH_BITS);
@@ -507,7 +507,7 @@ String RPURecord::toJSON() const
         "{\"elapsed_s\":%u,\"alt\":%.0f,\"lat_delta\":%.5f,\"lon_delta\":%.5f,"
         "\"sats\":%u,\"gps_age_s\":%u,"
         "\"opc_d300\":%u,\"opc_d2000\":%u,"
-        "\"tsen_airt\":%u,\"tsen_pres\":%u,\"tsen_ptemp\":%u,"
+        "\"tsen_airt\":%u,\"tsen_pres\":%lu,\"tsen_ptemp\":%lu,"
         "\"rs41_air_t\":%.2f,\"rs41_pres\":%.1f,\"rs41_humidity\":%.2f,\"rs41_hsensor_t\":%.2f,"
         "\"tdlas_mixing_ratio\":%.2f,\"tdlas_background\":%.0f,\"tdlas_peak\":%.1f,\"tdlas_ratio\":%.1f,"
         "\"tdlas_laser_temp\":%.2f,\"tdlas_mr_max_ratio\":%.1f,\"tdlas_status\":%u,\"tdlas_cluster_idx\":%u,"
@@ -520,7 +520,7 @@ String RPURecord::toJSON() const
         elapsed_s_, getAlt(), getLatDelta(), getLonDelta(),
         sats_, gps_age_s_,
         opc_d300_, opc_d2000_,
-        tsen_airt_raw_, tsen_pres_raw_, tsen_ptemp_raw_,
+        tsen_airt_raw_, (unsigned long)tsen_pres_raw_, (unsigned long)tsen_ptemp_raw_,
         getRs41AirT(), getRs41Pres(), getRs41Humidity(), getRs41HSensorT(),
         getTdlasMixingRatio(), getTdlasBackground(), getTdlasPeak(), getTdlasRatio(),
         getTdlasLaserTemp(), getTdlasMrMaxRatio(), getTdlasStatus(), getTdlasClusterIdx(),

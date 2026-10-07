@@ -12,7 +12,7 @@ void setUp(void) {}
 void tearDown(void) {}
 
 void test_record_size_constant() {
-    TEST_ASSERT_EQUAL_UINT32(49, RPU_RECORD_BYTES);
+    TEST_ASSERT_EQUAL_UINT32(51, RPU_RECORD_BYTES);
 }
 
 void test_buffer_too_small() {
@@ -67,8 +67,8 @@ void test_fast_field_roundtrip() {
     TEST_ASSERT_EQUAL_UINT16(1000, decoded.getOpcD300());
     TEST_ASSERT_EQUAL_UINT16(2000, decoded.getOpcD2000());
     TEST_ASSERT_EQUAL_UINT16(0xABC, decoded.getTsenAirt());
-    TEST_ASSERT_EQUAL_UINT16(0x1234, decoded.getTsenPres());
-    TEST_ASSERT_EQUAL_UINT16(0xFEDC, decoded.getTsenPtemp());
+    TEST_ASSERT_EQUAL_UINT32(0x123456, decoded.getTsenPres());
+    TEST_ASSERT_EQUAL_UINT32(0xFEDCBA, decoded.getTsenPtemp());
     TEST_ASSERT_FLOAT_WITHIN(0.005f, 23.45f, decoded.getRs41AirT());
     TEST_ASSERT_FLOAT_WITHIN(0.05f, 987.6f, decoded.getRs41Pres());
     TEST_ASSERT_FLOAT_WITHIN(0.005f, 55.55f, decoded.getRs41Humidity());

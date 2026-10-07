@@ -185,7 +185,7 @@ private:
 // ---------------------------------------------------------------------------
 // RPURecord bit-field widths
 // Shared between RPU (encoder) and TMmonster (decoder).
-// Record version 2 — 392 bits = 49 bytes, big-endian, no padding.
+// Record version 4 — 408 bits = 51 bytes, big-endian, no padding.
 //
 // Each RPURecord carries 28 "fast" fields (period = 1, present every record)
 // plus one fixed-size 40-bit "slot" from a round-robin rotation of 6 "slow"
@@ -197,7 +197,7 @@ private:
 // fixed RPU_REC_SLOT_BITS regardless of index, so the overall record length
 // never varies.
 // ---------------------------------------------------------------------------
-constexpr uint8_t  RPU_REC_VERSION       = 3;
+constexpr uint8_t  RPU_REC_VERSION       = 4;
 constexpr uint8_t  RPU_REC_VER_BITS      = 4;    // packet format version
 
 // --- Fast fields (period = 1, present in every record) ---------------------
@@ -210,7 +210,9 @@ constexpr uint8_t  RPU_REC_SATS_BITS            = 4;  // satellite count (0–15
 constexpr uint8_t  RPU_REC_GPS_AGE_BITS         = 4;  // GPS fix age, s, clamped (0–15 s)
 
 constexpr uint8_t  RPU_REC_OPC_BITS             = 16; // OPC bin counts, raw
-constexpr uint8_t  RPU_REC_TSEN_BITS            = 16; // TSEN raw counts (airt: 0–4095; pres/ptemp: top 16 bits of 24-bit count)
+constexpr uint8_t  RPU_REC_TSEN_AIRT_BITS       = 16; // TSEN air temp raw A/D count (0–4095)
+constexpr uint8_t  RPU_REC_TSEN_PRES_BITS       = 24; // TSEN pressure raw 24-bit count (0–0xFFFFFF)
+constexpr uint8_t  RPU_REC_TSEN_PTEMP_BITS      = 24; // TSEN temp-of-pressure raw 24-bit count (0–0xFFFFFF)
 
 constexpr uint8_t  RPU_REC_RS41_T_BITS          = 16; // (T + 100) x436.9067  (-100 to +50 °C)
 constexpr uint8_t  RPU_REC_RS41_P_BITS          = 16; // (ln(P) - 3.4012) x18533.04  (30–1030 hPa)
@@ -247,13 +249,13 @@ constexpr uint8_t  RPU_REC_RS41_DISCONNECTED_BOOM   = (1u << 7); // E.9: disconn
 constexpr uint8_t  RPU_REC_SLOT_PAD_BITS   = 8;  // padding within the two-field 40-bit slots (indices 0-3)
 constexpr size_t   RPU_REC_SLOT_BITS       = 40; // fixed round-robin slot size
 
-constexpr size_t   RPU_RECORD_BYTES        = 49; // (352 fast + 40 slow) / 8
+constexpr size_t   RPU_RECORD_BYTES        = 51; // (368 fast + 40 slow) / 8
 constexpr size_t   RPU_BLOCK_HDR_BYTES     = 12; // epoch_time (uint32) + gps_lat (int32) + gps_lon (int32)
 
 // ---------------------------------------------------------------------------
 // RPURecord
 // Holds one tickMeasure() sample (GPS, OPC, TSEN, RS41, TDLAS, housekeeping)
-// and converts to/from the bit-packed wire format (RPU_REC_VERSION 1).
+// and converts to/from the bit-packed wire format (RPU_REC_VERSION 4).
 //
 // Fast fields (period = 1) are present in every record. Slow fields
 // (period = 8) are set on every tick, but encode() only serialises the one
@@ -335,8 +337,8 @@ public:
     uint16_t getOpcD300()      const { return opc_d300_; }
     uint16_t getOpcD2000()     const { return opc_d2000_; }
     uint16_t getTsenAirt()     const { return tsen_airt_raw_; }
-    uint16_t getTsenPres()     const { return tsen_pres_raw_; }
-    uint16_t getTsenPtemp()    const { return tsen_ptemp_raw_; }
+    uint32_t getTsenPres()     const { return tsen_pres_raw_; }
+    uint32_t getTsenPtemp()    const { return tsen_ptemp_raw_; }
     float    getRs41AirT()     const { return (rs41_air_t_raw_ / 436.9067f) - 100.0f; }
     float    getRs41Pres()     const { return expf((rs41_pres_raw_ / 18533.04f) + 3.4012f); }
     float    getRs41Humidity() const { return (rs41_humidity_raw_ / 543.1333f) - 20.0f; }
@@ -414,8 +416,8 @@ private:
     uint16_t opc_d300_           = 0;
     uint16_t opc_d2000_          = 0;
     uint16_t tsen_airt_raw_      = 0; // raw 12-bit A/D count
-    uint16_t tsen_pres_raw_      = 0; // top 16 bits of raw 24-bit count
-    uint16_t tsen_ptemp_raw_     = 0; // top 16 bits of raw 24-bit count
+    uint32_t tsen_pres_raw_      = 0; // raw 24-bit count
+    uint32_t tsen_ptemp_raw_     = 0; // raw 24-bit count
     uint16_t rs41_air_t_raw_     = 0; // (T + 100) x436.9067, -100 to +50 °C
     uint16_t rs41_pres_raw_      = 0; // (ln(P) - 3.4012) x18533.04, 30-1030 hPa
     uint16_t rs41_humidity_raw_  = 0; // (RH + 20) x543.1333, -20 to +100 %RH

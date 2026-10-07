@@ -5,8 +5,8 @@ This document records the design discussion and scaling decisions behind the
 
 ## Goal
 
-`RPURecord` bit-packs one `tickMeasure()` sample into a **fixed 49-byte
-(392-bit) record**. This is `RPU_REC_VERSION = 3`, which finalizes the TDLAS
+`RPURecord` bit-packs one `tickMeasure()` sample into a **fixed 51-byte
+(408-bit) record**. This is `RPU_REC_VERSION = 4`, which finalizes the TDLAS
 field layout (see "TDLAS scaling" below) that `RPU_REC_VERSION = 1` carried as
 provisional placeholders.
 
@@ -41,13 +41,13 @@ The current design trims the per-record payload to 48 bytes by:
 
 ## Field groups
 
-### Fast fields (period = 1, 352 bits/record including version)
+### Fast fields (period = 1, 368 bits/record including version)
 
 Present in every record, in this order:
 
 | # | Field | Setter / Getter | Encoding | Bits |
 |---|---|---|---|---|
-| — | record format version | encoded internally | fixed value `RPU_REC_VERSION = 3` | 4 |
+| — | record format version | encoded internally | fixed value `RPU_REC_VERSION = 4` | 4 |
 | 1 | round-robin index | managed internally (see "Round-robin cycling") | 0–5, selects which slow-field slot follows | 4 |
 | 2 | elapsed time | `setElapsedS`/`getElapsedS` | seconds since `MeasureStartMillis`, raw uint16 (0–65535 s) | 16 |
 | 3 | GPS altitude | `setAlt`/`getAlt` | meters, raw uint16 | 16 |
@@ -58,8 +58,8 @@ Present in every record, in this order:
 | 8 | ROPC 300nm | `setOpcD300`/`getOpcD300` | raw count | 16 |
 | 9 | ROPC 2000nm | `setOpcD2000`/`getOpcD2000` | raw count | 16 |
 | 10 | TSEN air temperature | `setTsenAirt`/`getTsenAirt` | raw 12-bit A/D count (0–0xFFF) | 16 |
-| 11 | TSEN pressure | `setTsenPres`/`getTsenPres` | top 16 bits of raw 24-bit count | 16 |
-| 12 | TSEN temp-of-pressure | `setTsenPtemp`/`getTsenPtemp` | top 16 bits of raw 24-bit count | 16 |
+| 11 | TSEN pressure | `setTsenPres`/`getTsenPres` | raw 24-bit count | 24 |
+| 12 | TSEN temp-of-pressure | `setTsenPtemp`/`getTsenPtemp` | raw 24-bit count | 24 |
 | 13 | RS41 air temperature | `setRs41AirT`/`getRs41AirT` | `(T+100) x436.9067`, -100 to +50 °C | 16 |
 | 14 | RS41 pressure | `setRs41Pres`/`getRs41Pres` | `(ln(P) - 3.4012) x18533.04`, 30–1030 hPa | 16 |
 | 15 | RS41 RH | `setRs41Humidity`/`getRs41Humidity` | `(RH+20) x543.1333`, -20 to +100 %RH | 16 |
@@ -78,10 +78,10 @@ Present in every record, in this order:
 | 28 | TDLAS cluster value 4 | `setTdlasCluster4`/`getTdlasCluster4` | `x100`, 0–163.83 | 14 |
 
 Bit tally:
-- version (4) + rr_idx (4) + fields 2–16 (13 × 16 = 208) + sats/age (2 × 4 = 8)
+- version (4) + rr_idx (4) + fields 2–16 (11 × 16 + 2 × 24 = 224) + sats/age (2 × 4 = 8)
   + mixing_ratio (18) + background (12) + peak (9) + ratio (5) + laser_temp (12)
   + mr_max_ratio (7) + status (5) + cluster_idx (4) + cluster1–4 (4 × 14 = 56)
-  = **352 bits**.
+  = **368 bits**.
 
 Total TDLAS fast bits: 18+12+9+5+12+7+5+4+56 = **128 bits**.
 
@@ -162,9 +162,8 @@ block header (see "Block header" below).
 ### TSEN raw values
 
 `tsenRaw.airt_raw` is a 12-bit A/D count (0–0xFFF); `tsenRaw.ptemp_raw` and
-`tsenRaw.pres_raw` are 24-bit counts (0–0xFFFFFF). The spec only allows 16
-bits per TSEN field, so `setTsenPres`/`setTsenPtemp` keep the **top 16 bits**
-of the 24-bit count (`raw >> 8`), discarding the bottom 8 bits of precision.
+`tsenRaw.pres_raw` are 24-bit counts (0–0xFFFFFF). `setTsenPres`/`setTsenPtemp`
+store and transmit the full 24-bit count (no truncation).
 
 ## Block header
 
@@ -223,12 +222,12 @@ consecutive records, all 17 slow fields are eventually transmitted once.
 
 ## Final bit layout / packet size
 
-Total per-record payload: 352 (fast, including version) + 40 (one round-robin
-slot) = **392 bits = 49 bytes** (`RPU_RECORD_BYTES`), no padding needed.
+Total per-record payload: 368 (fast, including version) + 40 (one round-robin
+slot) = **408 bits = 51 bytes** (`RPU_RECORD_BYTES`), no padding needed.
 
 | Constant | Bits | Used for |
 |---|---|---|
-| `RPU_REC_VER_BITS` | 4 | record format version (`RPU_REC_VERSION = 3`) |
+| `RPU_REC_VER_BITS` | 4 | record format version (`RPU_REC_VERSION = 4`) |
 | `RPU_REC_RR_IDX_BITS` | 4 | round-robin slot index (0–5) |
 | `RPU_REC_ELAPSED_BITS` | 16 | elapsed seconds since `MeasureStartMillis` |
 | `RPU_REC_ALT_BITS` | 16 | altitude, m, raw |
@@ -236,7 +235,9 @@ slot) = **392 bits = 49 bytes** (`RPU_RECORD_BYTES`), no padding needed.
 | `RPU_REC_SATS_BITS` | 4 | satellite count (0–15) |
 | `RPU_REC_GPS_AGE_BITS` | 4 | GPS fix age, s, clamped (0–15 s) |
 | `RPU_REC_OPC_BITS` | 16 | OPC bin counts, raw |
-| `RPU_REC_TSEN_BITS` | 16 | TSEN raw counts (airt: 0–4095; pres/ptemp: top 16 bits of 24-bit count) |
+| `RPU_REC_TSEN_AIRT_BITS` | 16 | TSEN air temp raw A/D count (0–4095) |
+| `RPU_REC_TSEN_PRES_BITS` | 24 | TSEN pressure raw 24-bit count (0–0xFFFFFF) |
+| `RPU_REC_TSEN_PTEMP_BITS` | 24 | TSEN temp-of-pressure raw 24-bit count (0–0xFFFFFF) |
 | `RPU_REC_RS41_T_BITS` | 16 | `(T+100) x436.9067` (-100 to +50 °C) |
 | `RPU_REC_RS41_P_BITS` | 16 | `(ln(P) - 3.4012) x18533.04` (30–1030 hPa) |
 | `RPU_REC_RS41_RH_BITS` | 16 | `(RH+20) x543.1333` (-20 to +100 %RH) |
@@ -258,7 +259,7 @@ slot) = **392 bits = 49 bytes** (`RPU_RECORD_BYTES`), no padding needed.
 | `RPU_REC_VOLT_BITS` | 12 | battery voltage `x100` (0–40.95 V) |
 | `RPU_REC_HEATER_BITS` | 4 | heater status (bit0: battery heater on) |
 | `RPU_REC_SLOT_PAD_BITS` | 8 | padding within the two-field 40-bit slots (indices 0–3) |
-| `RPU_RECORD_BYTES` | — | 49 bytes = (352 fast + 40 slow) / 8 |
+| `RPU_RECORD_BYTES` | — | 51 bytes = (368 fast + 40 slow) / 8 |
 | `RPU_BLOCK_HDR_BYTES` | — | 12 bytes = epoch_time (uint32) + gps_lat (int32) + gps_lon (int32) |
 
 ## Open items / not yet done
@@ -278,5 +279,8 @@ slot) = **392 bits = 49 bytes** (`RPU_RECORD_BYTES`), no padding needed.
   `background`, `peak`, `ratio`, `laser_temp`, `mr_max_ratio`, `status`,
   `cluster_idx`, `cluster_1`–`4`) and widened the TDLAS fast-field block from
   120 to 128 bits, growing the record from 48 to 49 bytes.
-- **v3** (`RPU_REC_VERSION = 3`): RS41 pressure re-scaled to `(ln(P) - 3.4012) x18533.04`
+- **v3** (`RPU_REC_VERSION = 4`): RS41 pressure re-scaled to `(ln(P) - 3.4012) x18533.04`
   (30–1030 hPa, was 50–1050 hPa). Layout and record size unchanged.
+- **v4** (`RPU_REC_VERSION = 4`): TSEN pressure and temp-of-pressure now carry the full
+  24-bit count instead of the top 16 bits (v3 and earlier lost the low 8 bits).
+  Fast block grows 352 to 368 bits; record grows from 49 to 51 bytes.
